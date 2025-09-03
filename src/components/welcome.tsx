@@ -26,15 +26,19 @@ export function Welcome() {
               Paste any text to check its validity.
             </p>
           </div>
-          <div className="p-4 bg-background rounded-lg opacity-50">
-            <Camera className="mx-auto mb-2 size-8 text-muted-foreground" />
+          <div className="p-4 bg-background rounded-lg">
+            <Camera className="mx-auto mb-2 size-8 text-accent" />
             <h3 className="font-semibold">Image Verification</h3>
-            <p className="text-sm text-muted-foreground">(Coming Soon)</p>
+            <p className="text-sm text-muted-foreground">
+              Upload an image to check its origin.
+            </p>
           </div>
-          <div className="p-4 bg-background rounded-lg opacity-50">
-            <Mic className="mx-auto mb-2 size-8 text-muted-foreground" />
+          <div className="p-4 bg-background rounded-lg">
+            <Mic className="mx-auto mb-2 size-8 text-accent" />
             <h3 className="font-semibold">Voice Transcription</h3>
-            <p className="text-sm text-muted-foreground">(Coming Soon)</p>
+            <p className="text-sm text-muted-foreground">
+              Speak your query and get it fact-checked.
+            </p>
           </div>
         </div>
         <p className="text-center text-sm text-muted-foreground pt-4">

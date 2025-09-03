@@ -9,7 +9,26 @@ import {
   ShieldCheck,
   MessageSquare,
   Sparkles,
+  Trash2,
+  RotateCw,
+  ChevronDown,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   SidebarProvider,
   Sidebar,
@@ -23,9 +42,10 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
+  SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
@@ -50,6 +70,7 @@ export default function Home() {
   const [text, setText] = useState("");
   const [result, setResult] = useState<FactCheckResult | null>(null);
   const [history, setHistory] = useState<FactCheckResult[]>([]);
+  const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -87,6 +108,26 @@ export default function Home() {
     setResult(selectedResult);
     setText(selectedResult.query);
   };
+
+  const handleClearHistory = () => {
+    setHistory([]);
+    setResult(null);
+    setText("");
+    setShowClearHistoryDialog(false);
+    toast({
+      title: "History Cleared",
+      description: "Your fact-checking history has been deleted.",
+    });
+  };
+
+  const handleNewSession = (message: string) => {
+    setText("");
+    setResult(null);
+    toast({
+      title: "New Session Started",
+      description: message,
+    })
+  }
   
   const getVerdictColor = (verdict?: 'TRUE' | 'FAKE') => {
     if (!verdict) return 'bg-muted';
@@ -105,6 +146,13 @@ export default function Home() {
               <History />
               History
             </SidebarGroupLabel>
+            {history.length > 0 && (
+              <SidebarGroupAction asChild>
+                <Button variant="ghost" size="icon" className="size-6" onClick={() => setShowClearHistoryDialog(true)}>
+                  <Trash2/>
+                </Button>
+              </SidebarGroupAction>
+            )}
             <SidebarMenu>
               {history.length === 0 && (
                  <p className="px-2 text-sm text-sidebar-foreground/70">No queries yet.</p>
@@ -145,9 +193,31 @@ export default function Home() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col">
-        <header className="flex items-center gap-4 p-2 border-b md:p-4">
-          <SidebarTrigger />
-          <h1 className="text-lg font-semibold md:text-xl">Fact Checker</h1>
+        <header className="flex items-center justify-between gap-4 p-2 border-b md:p-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <h1 className="text-lg font-semibold md:text-xl">Fact Checker</h1>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2 font-bold">
+                <RotateCw className="size-4" />
+                <span>New Session</span>
+                <ChevronDown className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => handleNewSession("Ready for a new fact-check!")}>
+                Start Fresh
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleNewSession("Let's investigate something new.")}>
+                Clear and Go
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleNewSession("A clean slate for your next query.")}>
+                Reset Canvas
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
 
         <main className="flex-1 overflow-auto p-4 md:p-6">
@@ -155,8 +225,8 @@ export default function Home() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="p-1 bg-muted rounded-lg flex gap-1 w-fit">
                  <Button type="button" size="sm" className="bg-background shadow-sm hover:bg-background/80"><MessageSquare/>Text</Button>
-                 <Button type="button" size="sm" variant="ghost" disabled><ImageIcon/>Image</Button>
-                 <Button type="button" size="sm" variant="ghost" disabled><Mic/>Voice</Button>
+                 <Button type="button" size="sm" variant="ghost"><ImageIcon/>Image</Button>
+                 <Button type="button" size="sm" variant="ghost"><Mic/>Voice</Button>
               </div>
               <Textarea
                 value={text}
@@ -178,6 +248,22 @@ export default function Home() {
           </div>
         </main>
       </SidebarInset>
+      <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete your entire fact-checking history. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearHistory} className={buttonVariants({ variant: "destructive" })}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 }
