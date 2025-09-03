@@ -239,7 +239,7 @@ export default function Home() {
                     type="button"
                     size="sm"
                     className={cn(inputMode === 'text' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                    variant={inputMode !== 'text' ? 'ghost' : 'default'}
+                    variant={inputMode === 'text' ? "secondary" : "ghost"}
                     onClick={() => setInputMode('text')}
                   >
                     <MessageSquare/>Text
@@ -248,7 +248,7 @@ export default function Home() {
                     type="button"
                     size="sm"
                     className={cn(inputMode === 'image' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                    variant={inputMode !== 'image' ? 'ghost' : 'default'}
+                    variant={inputMode === 'image' ? "secondary" : "ghost"}
                     onClick={() => setInputMode('image')}
                   >
                     <ImageIcon/>Image
@@ -257,7 +257,7 @@ export default function Home() {
                     type="button"
                     size="sm"
                     className={cn(inputMode === 'voice' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                    variant={inputMode !== 'voice' ? 'ghost' : 'default'}
+                    variant={inputMode === 'voice' ? "secondary" : "ghost"}
                     onClick={() => setInputMode('voice')}
                   >
                     <Mic/>Voice
