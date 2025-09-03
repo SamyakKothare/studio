@@ -7,9 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Image as ImageIcon, Sparkles, X } from 'lucide-react';
 import Image from 'next/image';
+import type { FactCheckImageAndTextInput } from '@/ai/flows/fact-check-image-and-text';
 
 interface ImageInputProps {
-  onFactCheck: (query: string) => void;
+  onFactCheck: (input: FactCheckImageAndTextInput) => void;
   isPending: boolean;
 }
 
@@ -46,7 +47,7 @@ export function ImageInput({ onFactCheck, isPending }: ImageInputProps) {
   
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!imageFile) {
+    if (!imageFile || !imagePreview) {
         toast({
             title: 'Image required',
             description: 'Please upload an image to fact-check.',
@@ -63,8 +64,7 @@ export function ImageInput({ onFactCheck, isPending }: ImageInputProps) {
         return;
     }
 
-    const query = `Image: [${imageFile.name}] - ${description}`;
-    onFactCheck(query);
+    onFactCheck({ query: description, photoDataUri: imagePreview });
   };
 
   return (

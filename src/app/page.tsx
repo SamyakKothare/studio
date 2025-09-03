@@ -45,16 +45,18 @@ import {
   SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
-import { checkFact } from "./actions";
+import { checkFact, checkImageFact } from "./actions";
 import { Logo } from "@/components/logo";
 import { VerdictCard } from "@/components/verdict-card";
 import { Welcome } from "@/components/welcome";
 import { ImageInput } from "@/components/image-input";
 import { VoiceInput } from "@/components/voice-input";
+import { buttonVariants } from "@/components/ui/button";
+import type { FactCheckImageAndTextInput } from "@/ai/flows/fact-check-image-and-text";
 
 type FactCheckResult = GenerateFactCheckVerdictOutput & {
   query: string;
@@ -107,6 +109,27 @@ export default function Home() {
       }
     });
   }
+
+  const handleImageFactCheck = (input: FactCheckImageAndTextInput) => {
+    setResult(null);
+    startTransition(async () => {
+      try {
+        const response = await checkImageFact(input);
+        if (response) {
+          const newResult = { ...response, query: input.query };
+          setResult(newResult);
+          setHistory((prevHistory) => [newResult, ...prevHistory]);
+        }
+      } catch (error) {
+        console.error("Image fact check failed:", error);
+        toast({
+          title: "Error",
+          description: "Failed to get image fact-check result. Please try again.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -282,7 +305,7 @@ export default function Home() {
 
               {inputMode === 'image' && (
                 <ImageInput 
-                  onFactCheck={handleFactCheck} 
+                  onFactCheck={handleImageFactCheck} 
                   isPending={isPending}
                 />
               )}

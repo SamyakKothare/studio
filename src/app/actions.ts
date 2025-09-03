@@ -1,6 +1,7 @@
 "use server";
 
 import { generateFactCheckVerdict, type GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
+import { factCheckImageAndText, type FactCheckImageAndTextInput } from "@/ai/flows/fact-check-image-and-text";
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
   if (!text) {
@@ -17,3 +18,17 @@ export async function checkFact(text: string): Promise<GenerateFactCheckVerdictO
     throw new Error("Failed to get a verdict from the AI model.");
   }
 }
+
+export async function checkImageFact(input: FactCheckImageAndTextInput): Promise<GenerateFactCheckVerdictOutput | null> {
+    if (!input.query || !input.photoDataUri) {
+      throw new Error("Image and query are required for fact-checking.");
+    }
+  
+    try {
+      const result = await factCheckImageAndText(input);
+      return result;
+    } catch (error) {
+      console.error("Error in factCheckImageAndText flow:", error);
+      throw new Error("Failed to get a verdict from the AI model for the image.");
+    }
+  }

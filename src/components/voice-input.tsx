@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Mic, Sparkles, Square, Waves } from 'lucide-react';
+import { Mic, Square, Waves } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { speechToText } from '@/ai/flows/speech-to-text';
 
@@ -19,29 +19,31 @@ export function VoiceInput({ onFactCheck, isPending }: VoiceInputProps) {
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const getMicPermission = async () => {
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        setHasPermission(true);
-      } catch (error) {
-        console.error('Error accessing microphone:', error);
-        setHasPermission(false);
-      }
-    };
-    if (hasPermission === null) {
-      getMicPermission();
+  const getMicPermission = useCallback(async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      setHasPermission(true);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      setHasPermission(false);
+      toast({
+          title: 'Microphone Access Denied',
+          description: 'Please enable microphone permissions in your browser settings.',
+          variant: 'destructive',
+      });
     }
-  }, [hasPermission]);
+  }, [toast]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        getMicPermission();
+    }
+  }, [getMicPermission]);
 
   const handleStartRecording = async () => {
     if (isRecording) return;
-    if (hasPermission === false) {
-        toast({
-            title: 'Microphone Access Denied',
-            description: 'Please enable microphone permissions in your browser settings.',
-            variant: 'destructive',
-        });
+    if (hasPermission !== true) {
+        await getMicPermission();
         return;
     }
     
@@ -61,6 +63,10 @@ export function VoiceInput({ onFactCheck, isPending }: VoiceInputProps) {
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result as string;
+            toast({
+                title: 'Processing Audio',
+                description: 'Transcribing your speech...',
+            });
             try {
                 const {transcription} = await speechToText({audioDataUri: base64Audio});
                 if (transcription) {
@@ -102,11 +108,9 @@ export function VoiceInput({ onFactCheck, isPending }: VoiceInputProps) {
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
+      // get the stream and stop it to turn off the mic indicator
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
-      toast({
-        title: 'Recording Stopped',
-        description: 'Processing audio...',
-      });
     }
   };
 
