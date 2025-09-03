@@ -47,7 +47,7 @@ const speechToTextFlow = ai.defineFlow(
   },
   async (input) => {
     const llmResponse = await prompt(input);
-    const output = llmResponse.output();
+    const output = llmResponse.output;
     if (!output) {
         throw new Error("No output from prompt");
     }
