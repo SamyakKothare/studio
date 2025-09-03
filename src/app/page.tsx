@@ -53,10 +53,14 @@ import { checkFact } from "./actions";
 import { Logo } from "@/components/logo";
 import { VerdictCard } from "@/components/verdict-card";
 import { Welcome } from "@/components/welcome";
+import { ImageInput } from "@/components/image-input";
+import { VoiceInput } from "@/components/voice-input";
 
 type FactCheckResult = GenerateFactCheckVerdictOutput & {
   query: string;
 };
+
+type InputMode = "text" | "image" | "voice";
 
 const trustedSources = [
   { name: "Wikipedia", icon: <BookCheck /> },
@@ -71,11 +75,11 @@ export default function Home() {
   const [result, setResult] = useState<FactCheckResult | null>(null);
   const [history, setHistory] = useState<FactCheckResult[]>([]);
   const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>("text");
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!text.trim()) {
+  const handleFactCheck = (query: string) => {
+    if (!query.trim()) {
       toast({
         title: "Input required",
         description: "Please enter some text to fact-check.",
@@ -87,9 +91,9 @@ export default function Home() {
 
     startTransition(async () => {
       try {
-        const response = await checkFact(text);
+        const response = await checkFact(query);
         if (response) {
-          const newResult = { ...response, query: text };
+          const newResult = { ...response, query };
           setResult(newResult);
           setHistory((prevHistory) => [newResult, ...prevHistory]);
         }
@@ -102,11 +106,17 @@ export default function Home() {
         });
       }
     });
+  }
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleFactCheck(text);
   };
 
   const handleSelectHistory = (selectedResult: FactCheckResult) => {
     setResult(selectedResult);
     setText(selectedResult.query);
+    setInputMode("text");
   };
 
   const handleClearHistory = () => {
@@ -123,6 +133,7 @@ export default function Home() {
   const handleNewSession = (message: string) => {
     setText("");
     setResult(null);
+    setInputMode("text");
     toast({
       title: "New Session Started",
       description: message,
@@ -222,24 +233,68 @@ export default function Home() {
 
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <div className="mx-auto max-w-4xl">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <div className="p-1 bg-muted rounded-lg flex gap-1 w-fit">
-                 <Button type="button" size="sm" className="bg-background shadow-sm hover:bg-background/80"><MessageSquare/>Text</Button>
-                 <Button type="button" size="sm" variant="ghost"><ImageIcon/>Image</Button>
-                 <Button type="button" size="sm" variant="ghost"><Mic/>Voice</Button>
+                 <Button
+                    type="button"
+                    size="sm"
+                    className={cn(inputMode === 'text' && "bg-background shadow-sm hover:bg-background/80")}
+                    variant={inputMode !== 'text' ? 'ghost' : 'default'}
+                    onClick={() => setInputMode('text')}
+                  >
+                    <MessageSquare/>Text
+                  </Button>
+                 <Button
+                    type="button"
+                    size="sm"
+                    className={cn(inputMode === 'image' && "bg-background shadow-sm hover:bg-background/80")}
+                    variant={inputMode !== 'image' ? 'ghost' : 'default'}
+                    onClick={() => setInputMode('image')}
+                  >
+                    <ImageIcon/>Image
+                  </Button>
+                 <Button
+                    type="button"
+                    size="sm"
+                    className={cn(inputMode === 'voice' && "bg-background shadow-sm hover:bg-background/80")}
+                    variant={inputMode !== 'voice' ? 'ghost' : 'default'}
+                    onClick={() => setInputMode('voice')}
+                  >
+                    <Mic/>Voice
+                  </Button>
               </div>
-              <Textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Enter a statement, claim, or question to fact-check..."
-                className="min-h-[120px] text-base"
-                disabled={isPending}
-              />
-              <Button type="submit" className="self-start" disabled={isPending}>
-                <Sparkles className="mr-2"/>
-                {isPending ? "Analyzing..." : "Fact Check"}
-              </Button>
-            </form>
+              
+              {inputMode === 'text' && (
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  <Textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Enter a statement, claim, or question to fact-check..."
+                    className="min-h-[120px] text-base"
+                    disabled={isPending}
+                  />
+                   <Button type="submit" className="self-start" disabled={isPending}>
+                    <Sparkles className="mr-2"/>
+                    {isPending ? "Analyzing..." : "Fact Check"}
+                  </Button>
+                </form>
+              )}
+
+              {inputMode === 'image' && (
+                <ImageInput 
+                  onFactCheck={handleFactCheck} 
+                  isPending={isPending}
+                />
+              )}
+
+              {inputMode === 'voice' && (
+                <VoiceInput
+                  onFactCheck={handleFactCheck}
+                  isPending={isPending}
+                />
+              )}
+
+            </div>
             <div className="mt-8">
               {isPending && <VerdictCard isLoading={true} />}
               {!isPending && result && <VerdictCard result={result} />}
