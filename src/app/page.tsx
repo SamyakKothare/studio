@@ -238,7 +238,7 @@ export default function Home() {
                  <Button
                     type="button"
                     size="sm"
-                    className={cn(inputMode === 'text' && "bg-background shadow-sm hover:bg-background/80")}
+                    className={cn(inputMode === 'text' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
                     variant={inputMode !== 'text' ? 'ghost' : 'default'}
                     onClick={() => setInputMode('text')}
                   >
@@ -247,7 +247,7 @@ export default function Home() {
                  <Button
                     type="button"
                     size="sm"
-                    className={cn(inputMode === 'image' && "bg-background shadow-sm hover:bg-background/80")}
+                    className={cn(inputMode === 'image' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
                     variant={inputMode !== 'image' ? 'ghost' : 'default'}
                     onClick={() => setInputMode('image')}
                   >
@@ -256,7 +256,7 @@ export default function Home() {
                  <Button
                     type="button"
                     size="sm"
-                    className={cn(inputMode === 'voice' && "bg-background shadow-sm hover:bg-background/80")}
+                    className={cn(inputMode === 'voice' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
                     variant={inputMode !== 'voice' ? 'ghost' : 'default'}
                     onClick={() => setInputMode('voice')}
                   >
