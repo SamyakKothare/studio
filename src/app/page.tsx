@@ -57,6 +57,7 @@ import { ImageInput } from "@/components/image-input";
 import { VoiceInput } from "@/components/voice-input";
 import { buttonVariants } from "@/components/ui/button";
 import type { FactCheckImageAndTextInput } from "@/ai/flows/fact-check-image-and-text";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type FactCheckResult = GenerateFactCheckVerdictOutput & {
   query: string;
@@ -255,69 +256,74 @@ export default function Home() {
         </header>
 
         <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="mx-auto max-w-4xl">
-            <div className="flex flex-col gap-4">
-              <div className="p-1 bg-muted rounded-lg flex gap-1 w-fit">
-                 <Button
-                    type="button"
-                    size="sm"
-                    className={cn(inputMode === 'text' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                    variant={inputMode === 'text' ? "secondary" : "ghost"}
-                    onClick={() => setInputMode('text')}
-                  >
-                    <MessageSquare/>Text
-                  </Button>
-                 <Button
-                    type="button"
-                    size="sm"
-                    className={cn(inputMode === 'image' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                    variant={inputMode === 'image' ? "secondary" : "ghost"}
-                    onClick={() => setInputMode('image')}
-                  >
-                    <ImageIcon/>Image
-                  </Button>
-                 <Button
-                    type="button"
-                    size="sm"
-                    className={cn(inputMode === 'voice' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                    variant={inputMode === 'voice' ? "secondary" : "ghost"}
-                    onClick={() => setInputMode('voice')}
-                  >
-                    <Mic/>Voice
-                  </Button>
-              </div>
-              
-              {inputMode === 'text' && (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                  <Textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Enter a statement, claim, or question to fact-check..."
-                    className="min-h-[120px] text-base"
-                    disabled={isPending}
+          <div className="mx-auto max-w-4xl space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Submit a Claim for Verification</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-1 bg-muted rounded-lg flex gap-1 w-fit">
+                  <Button
+                      type="button"
+                      size="sm"
+                      className={cn(inputMode === 'text' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
+                      variant={inputMode === 'text' ? "secondary" : "ghost"}
+                      onClick={() => setInputMode('text')}
+                    >
+                      <MessageSquare/>Text
+                    </Button>
+                  <Button
+                      type="button"
+                      size="sm"
+                      className={cn(inputMode === 'image' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
+                      variant={inputMode === 'image' ? "secondary" : "ghost"}
+                      onClick={() => setInputMode('image')}
+                    >
+                      <ImageIcon/>Image
+                    </Button>
+                  <Button
+                      type="button"
+                      size="sm"
+                      className={cn(inputMode === 'voice' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
+                      variant={inputMode === 'voice' ? "secondary" : "ghost"}
+                      onClick={() => setInputMode('voice')}
+                    >
+                      <Mic/>Voice
+                    </Button>
+                </div>
+                
+                {inputMode === 'text' && (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <Textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="Enter a statement, claim, or question to fact-check..."
+                      className="min-h-[120px] text-base"
+                      disabled={isPending}
+                    />
+                    <Button type="submit" className="self-start" disabled={isPending}>
+                      <Sparkles className="mr-2"/>
+                      {isPending ? "Analyzing..." : "Fact Check"}
+                    </Button>
+                  </form>
+                )}
+
+                {inputMode === 'image' && (
+                  <ImageInput 
+                    onFactCheck={handleImageFactCheck} 
+                    isPending={isPending}
                   />
-                   <Button type="submit" className="self-start" disabled={isPending}>
-                    <Sparkles className="mr-2"/>
-                    {isPending ? "Analyzing..." : "Fact Check"}
-                  </Button>
-                </form>
-              )}
+                )}
 
-              {inputMode === 'image' && (
-                <ImageInput 
-                  onFactCheck={handleImageFactCheck} 
-                  isPending={isPending}
-                />
-              )}
+                {inputMode === 'voice' && (
+                  <VoiceInput
+                    onFactCheck={handleFactCheck}
+                    isPending={isPending}
+                  />
+                )}
+              </CardContent>
+            </Card>
 
-              {inputMode === 'voice' && (
-                <VoiceInput
-                  onFactCheck={handleFactCheck}
-                  isPending={isPending}
-                />
-              )}
-
-            </div>
             <div className="mt-8">
               {isPending && <VerdictCard isLoading={true} />}
               {!isPending && result && <VerdictCard result={result} />}
