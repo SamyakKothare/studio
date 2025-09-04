@@ -66,9 +66,9 @@ type FactCheckResult = GenerateFactCheckVerdictOutput & {
 type InputMode = "text" | "image" | "voice";
 
 const trustedSources = [
-  { name: "Wikipedia", icon: <BookCheck /> },
-  { name: "NASA", icon: <BookCheck /> },
-  { name: "ISRO", icon: <BookCheck /> },
+  { name: "Wikipedia", icon: <BookCheck />, url: "https://www.wikipedia.org/" },
+  { name: "NASA", icon: <BookCheck />, url: "https://www.nasa.gov/" },
+  { name: "ISRO", icon: <BookCheck />, url: "https://www.isro.gov.in/" },
   { name: "Government Websites", icon: <BookCheck /> },
 ];
 
@@ -212,10 +212,21 @@ export default function Home() {
             <SidebarMenu>
               {trustedSources.map((source, index) => (
                 <SidebarMenuItem key={index}>
-                  <SidebarMenuButton tooltip={source.name} isActive={false}>
-                    {source.icon}
-                    <span>{source.name}</span>
-                  </SidebarMenuButton>
+                   {source.url ? (
+                    <a href={source.url} target="_blank" rel="noopener noreferrer" className="w-full">
+                      <SidebarMenuButton asChild tooltip={source.name} isActive={false} className="w-full">
+                        <span>
+                          {source.icon}
+                          <span>{source.name}</span>
+                        </span>
+                      </SidebarMenuButton>
+                    </a>
+                  ) : (
+                    <SidebarMenuButton tooltip={source.name} isActive={false}>
+                      {source.icon}
+                      <span>{source.name}</span>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
