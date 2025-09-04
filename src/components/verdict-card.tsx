@@ -44,6 +44,15 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
       ? "bg-yellow-500"
       : "bg-red-500";
 
+  const isValidUrl = (urlString: string) => {
+    try {
+      new URL(urlString);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   return (
     <Card className="shadow-lg animate-in fade-in-50">
       <CardHeader>
@@ -103,15 +112,28 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
         <Separator />
         <h3 className="font-medium">Sources</h3>
         <div className="space-y-2 w-full">
-          {sources.map((source, index) => (
-            <div
-              key={index}
-              className="text-sm text-muted-foreground flex items-center gap-2"
-            >
-              <LinkIcon className="h-4 w-4 shrink-0" />
-              <p className="truncate">{source}</p>
-            </div>
-          ))}
+          {sources.map((source, index) =>
+            isValidUrl(source) ? (
+              <a
+                key={index}
+                href={source}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground flex items-center gap-2 hover:text-primary hover:underline"
+              >
+                <LinkIcon className="h-4 w-4 shrink-0" />
+                <p className="truncate">{source}</p>
+              </a>
+            ) : (
+              <div
+                key={index}
+                className="text-sm text-muted-foreground flex items-center gap-2"
+              >
+                <LinkIcon className="h-4 w-4 shrink-0" />
+                <p className="truncate">{source}</p>
+              </div>
+            )
+          )}
         </div>
       </CardFooter>
     </Card>
