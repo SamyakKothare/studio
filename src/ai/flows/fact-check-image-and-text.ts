@@ -23,7 +23,7 @@ export type FactCheckImageAndTextInput = z.infer<typeof FactCheckImageAndTextInp
 const FactCheckImageAndTextOutputSchema = z.object({
   verdict: z.enum(['TRUE', 'FAKE']).describe('The verdict of the fact-check.'),
   confidenceScore: z.number().min(0).max(100).describe('The confidence score of the verdict (0-100%).'),
-  sources: z.array(z.string()).describe('A list of sources used in the verification process.'),
+  sources: z.array(z.string().url().or(z.string())).describe('A list of valid URL sources used in the verification process.'),
   when: z.string().optional().describe('When the statement is true.'),
   where: z.string().optional().describe('Where the statement is true.'),
 });
@@ -49,7 +49,7 @@ Statement: {{{query}}}
 4.  Determine a verdict (TRUE or FAKE) based on your research.
 5.  Calculate a confidence score (0-100%) representing the reliability of the verdict based on source agreement and credibility.
 6.  If the statement is true, extract "when" and "where" from it.
-7.  Provide a list of sources used in the verification process.
+7.  Provide a list of valid URL sources used in the verification process.
 
 Output the verdict, confidence score, sources, when, and where in JSON format.`,
 });
