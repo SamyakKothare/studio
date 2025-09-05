@@ -28,8 +28,8 @@ const LinkSchema = z.object({
 });
 
 const TraceMisinformationSourceOutputSchema = z.object({
-  nodes: z.array(NodeSchema).describe('A list of sources (websites, profiles) involved in spreading the claim.'),
-  links: z.array(LinkSchema).describe('A list of connections showing how the claim spread from source to target.'),
+  nodes: z.array(NodeSchema).describe('A list of sources (websites, profiles) involved in spreading the claim. If none are found, return an empty array.'),
+  links: z.array(LinkSchema).describe('A list of connections showing how the claim spread from source to target. If none are found, return an empty array.'),
   summary: z.string().describe('A brief narrative explaining the likely origin and path of the claim\'s spread.'),
 });
 export type TraceMisinformationSourceOutput = z.infer<typeof TraceMisinformationSourceOutputSchema>;
@@ -54,7 +54,7 @@ Claim: {{{claim}}}
     *   Create 'links' to show the flow of information. For example, if 'Fringe Blog' (source) was cited by 'Major News Outlet' (target), create a link between them.
 4.  **Summarize the Findings**: Write a brief narrative explaining the likely origin of the claim and the path it took to spread.
 
-Provide a comprehensive analysis in the final JSON object.`,
+Provide a comprehensive analysis in the final JSON object. If no definitive nodes or links can be found, you MUST return empty arrays for those fields. Your response must strictly adhere to the requested JSON schema.`,
 });
 
 const traceMisinformationSourceFlow = ai.defineFlow(
