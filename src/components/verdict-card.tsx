@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/accordion"
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
-import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin } from "lucide-react";
+import type { FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
+import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert } from "lucide-react";
 
-type FactCheckResult = GenerateFactCheckVerdictOutput & {
+type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
   query: string;
 };
 
@@ -43,6 +44,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
   }
 
   const { verdict, confidenceScore, confidenceReasoning, sources, when, where, query, explanation } = result;
+  const manipulationAnalysis = 'manipulationAnalysis' in result ? result.manipulationAnalysis : null;
   const isTrue = verdict === "TRUE";
 
   const confidenceColor =
@@ -51,6 +53,14 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
       : confidenceScore > 40
       ? "bg-yellow-500"
       : "bg-red-500";
+      
+  const manipulationConfidenceColor = manipulationAnalysis
+    ? manipulationAnalysis.manipulationConfidence > 75
+      ? "bg-green-500"
+      : manipulationAnalysis.manipulationConfidence > 40
+      ? "bg-yellow-500"
+      : "bg-red-500"
+    : "";
 
   const isValidUrl = (urlString: string) => {
     try {
@@ -101,6 +111,43 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
             <p className="text-sm text-muted-foreground mt-2 italic">"{confidenceReasoning}"</p>
           )}
         </div>
+
+        {manipulationAnalysis && <Separator />}
+
+        {manipulationAnalysis && (
+          <div>
+             <div className="flex justify-between items-center mb-2">
+                <h3 className="font-medium flex items-center gap-2">
+                  <ScanSearch className="size-5 text-primary" />
+                  Image Manipulation Analysis
+                </h3>
+                 <Badge
+                    variant="outline"
+                    className={cn(
+                      manipulationAnalysis.isManipulated
+                        ? "border-amber-500 text-amber-600"
+                        : "border-green-500 text-green-600"
+                    )}
+                  >
+                    {manipulationAnalysis.isManipulated ? (
+                       <ShieldAlert className="mr-2 h-4 w-4" />
+                    ) : (
+                       <Shield className="mr-2 h-4 w-4" />
+                    )}
+                    {manipulationAnalysis.isManipulated ? "Manipulation Likely" : "Seems Authentic"}
+                  </Badge>
+            </div>
+            <div className="flex items-center gap-4">
+              <Progress value={manipulationAnalysis.manipulationConfidence} className={cn("h-3", manipulationConfidenceColor)} />
+              <span className="font-semibold text-lg text-foreground/80">
+                {manipulationAnalysis.manipulationConfidence}%
+              </span>
+            </div>
+            {manipulationAnalysis.manipulationReasoning && (
+              <p className="text-sm text-muted-foreground mt-2 italic">"{manipulationAnalysis.manipulationReasoning}"</p>
+            )}
+          </div>
+        )}
 
         {(when || where) && <Separator />}
 
@@ -199,6 +246,15 @@ function VerdictCardSkeleton() {
       <CardContent className="space-y-6">
         <div>
           <Skeleton className="h-5 w-40 mb-2" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-7 w-12" />
+          </div>
+          <Skeleton className="h-4 w-full mt-2" />
+        </div>
+        <Separator />
+        <div>
+          <Skeleton className="h-5 w-48 mb-2" />
           <div className="flex items-center gap-4">
             <Skeleton className="h-3 w-full" />
             <Skeleton className="h-7 w-12" />

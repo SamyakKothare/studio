@@ -1,7 +1,7 @@
 "use server";
 
 import { generateFactCheckVerdict, type GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
-import { factCheckImageAndText, type FactCheckImageAndTextInput } from "@/ai/flows/fact-check-image-and-text";
+import { factCheckImageAndText, type FactCheckImageAndTextInput, type FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
   if (!text) {
@@ -19,7 +19,7 @@ export async function checkFact(text: string): Promise<GenerateFactCheckVerdictO
   }
 }
 
-export async function checkImageFact(input: FactCheckImageAndTextInput): Promise<GenerateFactCheckVerdictOutput | null> {
+export async function checkImageFact(input: FactCheckImageAndTextInput): Promise<FactCheckImageAndTextOutput | null> {
     if (!input.query || !input.photoDataUri) {
       throw new Error("Image and query are required for fact-checking.");
     }

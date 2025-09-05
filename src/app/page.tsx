@@ -56,10 +56,10 @@ import { Welcome } from "@/components/welcome";
 import { ImageInput } from "@/components/image-input";
 import { VoiceInput } from "@/components/voice-input";
 import { buttonVariants } from "@/components/ui/button";
-import type { FactCheckImageAndTextInput } from "@/ai/flows/fact-check-image-and-text";
+import type { FactCheckImageAndTextInput, FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type FactCheckResult = GenerateFactCheckVerdictOutput & {
+type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
   query: string;
 };
 

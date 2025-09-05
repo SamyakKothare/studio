@@ -31,6 +31,11 @@ const FactCheckImageAndTextOutputSchema = z.object({
   when: z.string().optional().describe('When the statement is true.'),
   where: z.string().optional().describe('Where the statement is true.'),
   explanation: z.string().describe('A brief, neutral explanation of the broader topic for context.'),
+  manipulationAnalysis: z.object({
+    isManipulated: z.boolean().describe('Whether the image appears to be digitally manipulated or AI-generated.'),
+    manipulationConfidence: z.number().min(0).max(100).describe('The confidence score for the manipulation analysis (0-100%).'),
+    manipulationReasoning: z.string().describe('A brief explanation for the manipulation analysis, detailing what was found.'),
+  }).describe('An analysis of the image for signs of digital manipulation or AI generation.'),
 });
 export type FactCheckImageAndTextOutput = z.infer<typeof FactCheckImageAndTextOutputSchema>;
 
@@ -43,22 +48,28 @@ const prompt = ai.definePrompt({
   name: 'factCheckImageAndTextPrompt',
   input: {schema: FactCheckImageAndTextInputSchema},
   output: {schema: FactCheckImageAndTextOutputSchema},
-  prompt: `You are a fact-checking expert. Your task is to determine the truthfulness of the given statement about the provided image.
+  prompt: `You are a world-class expert in both fact-checking and digital image forensics. Your task is to perform a two-part analysis on the provided image and statement.
 
 Image: {{media url=photoDataUri}}
 Statement: {{{query}}}
 
-1.  Analyze the image and the statement.
-2.  Research the statement using reliable sources such as wikipedia, government websites, NASA, ISRO, and google search.
-3.  Aggregate information from multiple sources to improve accuracy and confidence.
-4.  Determine a verdict (TRUE or FAKE) based on your research.
-5.  Calculate a confidence score (0-100%) representing the reliability of the verdict based on source agreement and credibility.
-6.  Provide a brief reasoning for the confidence score.
-7.  If the statement is true, extract "when" and "where" from it.
-8.  Provide a list of valid URL sources used in the verification process. For each source, provide a brief summary of its relevance.
-9.  Provide a brief, neutral explanation of the broader topic for context.
+**Part 1: Factual Verification**
+1.  Analyze the statement in the context of the image.
+2.  Research the statement using reliable sources (e.g., Wikipedia, government websites, NASA, ISRO, Google Search).
+3.  Determine a verdict (TRUE or FAKE).
+4.  Calculate a confidence score (0-100%) for your verdict.
+5.  Provide a brief reasoning for the confidence score.
+6.  If the statement is true, extract "when" and "where" from it.
+7.  List the URL sources used and a brief summary for each.
+8.  Provide a brief, neutral explanation of the broader topic for context.
 
-Output the verdict, confidence score, confidence reasoning, sources with summaries, when, where, and the explanation in JSON format.`,
+**Part 2: Image Manipulation Analysis**
+1.  Perform a forensic analysis of the image itself. Look for signs of digital manipulation, such as AI generation (deepfakes), Photoshop edits, inconsistent lighting, unnatural shadows, impossible geometry, or compression artifacts.
+2.  Determine if the image appears to be manipulated (isManipulated: true/false).
+3.  Provide a confidence score for this manipulation analysis (manipulationConfidence: 0-100%).
+4.  Provide a brief, non-technical reasoning for your analysis. For example, "The lighting on the subject is inconsistent with the background," or "No signs of manipulation were detected."
+
+Output the combined results of both parts in a single JSON object.`,
 });
 
 const factCheckImageAndTextFlow = ai.defineFlow(
