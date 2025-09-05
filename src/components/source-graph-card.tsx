@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { Share2, FileText, Newspaper, Megaphone, Globe, Info } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, ZAxis } from 'recharts';
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip } from 'recharts';
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 
@@ -68,10 +68,10 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
 
 
   const typeToIcon = {
-    origin: <FileText className="size-5 text-red-500" />,
-    amplifier: <Megaphone className="size-5 text-yellow-500" />,
-    news_outlet: <Newspaper className="size-5 text-blue-500" />,
-    social_media: <Share2 className="size-5 text-purple-500" />
+    origin: <FileText className="size-5" />,
+    amplifier: <Megaphone className="size-5" />,
+    news_outlet: <Newspaper className="size-5" />,
+    social_media: <Share2 className="size-5" />
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -79,19 +79,19 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
       const data = payload[0].payload;
       return (
           <div className="p-3 bg-background border border-border rounded-lg shadow-lg max-w-xs text-sm">
-              <p className="font-bold text-base text-foreground mb-1 flex items-center gap-2">
-                  {typeToIcon[data.type as keyof typeof typeToIcon]}
+              <p className="font-bold text-base text-foreground mb-2 flex items-center gap-2">
+                  <span className="text-primary">{typeToIcon[data.type as keyof typeof typeToIcon]}</span>
                   {data.label}
               </p>
                {data.details &&
                   <p className="text-muted-foreground mb-2 flex items-start gap-2">
-                      <Info className="size-4 mt-0.5 shrink-0" />
+                      <Info className="size-4 mt-0.5 shrink-0 text-primary" />
                       <span>{data.details}</span>
                   </p>
               }
               {data.location &&
                   <p className="text-muted-foreground mb-2 flex items-center gap-2">
-                      <Globe className="size-4 shrink-0" />
+                      <Globe className="size-4 shrink-0 text-primary" />
                       <span>{data.location}</span>
                   </p>
               }
@@ -108,6 +108,13 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
     news_outlet: 'hsl(var(--chart-1))',
     social_media: 'hsl(var(--chart-2))'
   };
+
+  const legendItems = [
+    { label: "Origin", color: typeToColor.origin },
+    { label: "Amplifier", color: typeToColor.amplifier },
+    { label: "News Outlet", color: typeToColor.news_outlet },
+    { label: "Social Media", color: typeToColor.social_media },
+  ];
 
   const NodeWithTimestamp = (props: any) => {
     const { cx, cy, payload } = props;
@@ -148,9 +155,9 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
         <Separator />
 
         <div className="w-full h-96">
-            {(graphData.nodes.length > 0 || graphData.links.length > 0) ? (
+            {(graphData.nodes.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart
+                     <ScatterChart
                         margin={{
                             top: 20,
                             right: 20,
@@ -158,25 +165,27 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                             left: 20,
                         }}
                         >
-                         <defs>
-                          {graphData.links.map((link, i) => (
-                              <linearGradient key={`gradient-${i}`} id={`gradient-${i}`}>
-                                  <stop offset="0%" stopColor="hsl(var(--border))" />
-                                  <stop offset="100%" stopColor="hsl(var(--border))" />
-                              </linearGradient>
-                          ))}
-                        </defs>
-                        {graphData.links.map((link, i) => (
-                           <line
-                                key={`line-${i}`}
-                                x1={link.source?.x}
-                                y1={link.source?.y}
-                                x2={link.target?.x}
-                                y2={link.target?.y}
-                                stroke="hsl(var(--border))"
-                                strokeWidth={1}
-                           />
-                        ))}
+                         <svg>
+                          <defs>
+                            {graphData.links.map((link, i) => (
+                                <linearGradient key={`gradient-${i}`} id={`gradient-${i}`}>
+                                    <stop offset="0%" stopColor="hsl(var(--border))" />
+                                    <stop offset="100%" stopColor="hsl(var(--border))" />
+                                </linearGradient>
+                            ))}
+                           </defs>
+                            {graphData.links.map((link, i) => (
+                              <line
+                                  key={`line-${i}`}
+                                  x1={link.source?.x}
+                                  y1={link.source?.y}
+                                  x2={link.target?.x}
+                                  y2={link.target?.y}
+                                  stroke="hsl(var(--border))"
+                                  strokeWidth={1}
+                              />
+                            ))}
+                        </svg>
                         <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
                         <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
                         <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
@@ -191,18 +200,36 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
         </div>
 
         <div>
+            <h3 className="font-semibold text-lg text-primary mb-3">Legend</h3>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {legendItems.map((item) => (
+                    <div key={item.label} className="flex items-center gap-2">
+                    <span
+                        className="size-3 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-muted-foreground">{item.label}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        <Separator />
+
+        <div>
           <h3 className="font-semibold text-lg text-primary mb-3">Detected Sources ({nodes.length})</h3>
            {nodes.length > 0 ? (
                 <ul className="space-y-4">
                 {nodes.map(node => (
                     <li key={node.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                        <span className="flex-shrink-0">{typeToIcon[node.type]}</span>
+                        <span className="flex-shrink-0 text-primary">{typeToIcon[node.type as keyof typeof typeToIcon]}</span>
                         <div className="flex-1 overflow-hidden">
                             <span className="font-medium">{node.label}</span>
                              <a href={node.id.startsWith('http') ? node.id : `https://www.google.com/search?q=${encodeURIComponent(node.id)}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate block">
                                 {node.id}
                             </a>
                         </div>
+                        {node.timestamp && <Badge variant="outline" className="text-xs">{node.timestamp}</Badge>}
                     </li>
                 ))}
                 </ul>
