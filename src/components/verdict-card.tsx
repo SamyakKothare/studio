@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import {
   Card,
   CardContent,
@@ -23,7 +23,9 @@ import {
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
 import type { FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
-import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert } from "lucide-react";
+import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert, Volume2, Loader } from "lucide-react";
+import { speakText } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
   query: string;
@@ -35,6 +37,10 @@ interface VerdictCardProps {
 }
 
 export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
+  const [isSpeaking, startSpeakingTransition] = useTransition();
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
+
   if (isLoading) {
     return <VerdictCardSkeleton />;
   }
@@ -46,6 +52,34 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
   const { verdict, confidenceScore, confidenceReasoning, sources, when, where, query, explanation } = result;
   const manipulationAnalysis = 'manipulationAnalysis' in result ? result.manipulationAnalysis : null;
   const isTrue = verdict === "TRUE";
+
+  const handleSpeak = (text: string) => {
+    if (audio?.src && !audio.paused) {
+      audio.pause();
+      audio.currentTime = 0;
+      setAudio(null);
+      return;
+    }
+
+    startSpeakingTransition(async () => {
+      try {
+        const response = await speakText(text);
+        if (response?.audioDataUri) {
+          const newAudio = new Audio(response.audioDataUri);
+          setAudio(newAudio);
+          newAudio.play();
+          newAudio.onended = () => setAudio(null);
+        }
+      } catch (error) {
+        console.error("Failed to generate speech:", error);
+        toast({
+          title: "Speech Generation Failed",
+          description: "Could not generate audio for the selected text.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
 
   const confidenceColor =
     confidenceScore > 75
@@ -184,10 +218,25 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
              <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
                 <AccordionTrigger>
-                  <span className="flex items-center gap-2 text-primary font-medium">
-                    <Info className="size-4" />
-                    Explain Further
-                  </span>
+                   <div className="flex justify-between w-full items-center">
+                    <span className="flex items-center gap-2 text-primary font-medium">
+                        <Info className="size-4" />
+                        Explain Further
+                    </span>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                           e.stopPropagation();
+                           handleSpeak(explanation);
+                        }}
+                        disabled={isSpeaking}
+                        className='mr-2'
+                        aria-label="Speak explanation"
+                    >
+                        {isSpeaking ? <Loader className="animate-spin" /> : <Volume2 />}
+                    </Button>
+                  </div>
                 </AccordionTrigger>
                 <AccordionContent className="text-base text-foreground/90">
                   {explanation}

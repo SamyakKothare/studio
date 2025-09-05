@@ -1,5 +1,5 @@
 "use client";
-
+import { useState, useTransition } from "react";
 import {
   Card,
   CardContent,
@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
-import { BrainCircuit, BookOpenCheck } from "lucide-react";
+import { BrainCircuit, BookOpenCheck, Volume2, Loader } from "lucide-react";
+import { Button } from "./ui/button";
+import { speakText } from "@/app/actions";
+import { useToast } from "@/hooks/use-toast";
 
 type FallacyAnalysisResult = AnalyzeTextForFallaciesOutput & {
   query: string;
@@ -21,6 +24,10 @@ interface FallacyAnalysisCardProps {
 }
 
 export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalysisCardProps) {
+  const [isSpeaking, startSpeakingTransition] = useTransition();
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
+
   if (isLoading) {
     return <FallacyAnalysisCardSkeleton />;
   }
@@ -31,19 +38,62 @@ export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalys
 
   const { fallacies, query } = result;
 
+  const handleSpeak = (text: string) => {
+    if (audio?.src && !audio.paused) {
+      audio.pause();
+      audio.currentTime = 0;
+      setAudio(null);
+      return;
+    }
+
+    startSpeakingTransition(async () => {
+      try {
+        const response = await speakText(text);
+        if (response?.audioDataUri) {
+          const newAudio = new Audio(response.audioDataUri);
+          setAudio(newAudio);
+          newAudio.play();
+          newAudio.onended = () => setAudio(null);
+        }
+      } catch (error) {
+        console.error("Failed to generate speech:", error);
+        toast({
+          title: "Speech Generation Failed",
+          description: "Could not generate audio for the selected text.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const fullExplanation = fallacies.map(f => `${f.fallacy}. Quote: ${f.excerpt}. Explanation: ${f.explanation}`).join('\n');
+
   return (
     <Card className="shadow-lg animate-in fade-in-50">
       <CardHeader>
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0">
-             <BrainCircuit className="size-8 text-primary" />
-          </div>
-          <div>
-            <CardTitle className="text-xl">Logical Fallacy Analysis</CardTitle>
-            <CardDescription className="pt-1">
-              Analysis for: "{query}"
-            </CardDescription>
-          </div>
+        <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+                <BrainCircuit className="size-8 text-primary" />
+            </div>
+            <div>
+                <CardTitle className="text-xl">Logical Fallacy Analysis</CardTitle>
+                <CardDescription className="pt-1">
+                Analysis for: "{query}"
+                </CardDescription>
+            </div>
+            </div>
+             {fallacies.length > 0 && (
+             <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleSpeak(fullExplanation)}
+                disabled={isSpeaking}
+                aria-label="Speak explanation"
+              >
+                {isSpeaking ? <Loader className="animate-spin" /> : <Volume2 />}
+              </Button>
+            )}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

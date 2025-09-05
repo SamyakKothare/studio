@@ -10,11 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
-import { Share2, FileText, Newspaper, Megaphone, Globe, Info } from "lucide-react";
+import { Share2, FileText, Newspaper, Megaphone, Globe, Info, Volume2, Loader } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip } from 'recharts';
-import { useMemo } from "react";
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, Customized } from 'recharts';
+import { useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "./ui/button";
+import { speakText } from "@/app/actions";
+import { useToast } from "@/hooks/use-toast";
 
 type SourceTraceResult = TraceMisinformationSourceOutput & {
   query: string;
@@ -25,18 +28,21 @@ interface SourceGraphCardProps {
   isLoading?: boolean;
 }
 
-// A simple hashing function to create positions for the graph
 const simpleHash = (str: string) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
+    hash |= 0; 
   }
   return hash;
 };
 
 export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardProps) {
+  const [isSpeaking, startSpeakingTransition] = useTransition();
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
+
   if (isLoading) {
     return <SourceGraphCardSkeleton />;
   }
@@ -47,13 +53,41 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
 
   const { nodes, links, summary, query } = result;
 
+  const handleSpeak = (text: string) => {
+    if (audio?.src && !audio.paused) {
+      audio.pause();
+      audio.currentTime = 0;
+      setAudio(null);
+      return;
+    }
+
+    startSpeakingTransition(async () => {
+      try {
+        const response = await speakText(text);
+        if (response?.audioDataUri) {
+          const newAudio = new Audio(response.audioDataUri);
+          setAudio(newAudio);
+          newAudio.play();
+          newAudio.onended = () => setAudio(null);
+        }
+      } catch (error) {
+        console.error("Failed to generate speech:", error);
+        toast({
+          title: "Speech Generation Failed",
+          description: "Could not generate audio for the summary.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
   const graphData = useMemo(() => {
     if (!nodes) return { nodes: [], links: [] };
     const positionedNodes = nodes.map((node, index) => ({
       ...node,
-      x: simpleHash(node.id) % 100, // Position based on hash
-      y: Math.floor(index / (Math.sqrt(nodes.length) || 1)) * 25 + (simpleHash(node.label) % 25), // Stagger y-position
-      size: 150, // Size for scatter plot
+      x: simpleHash(node.id) % 100, 
+      y: Math.floor(index / (Math.sqrt(nodes.length) || 1)) * 25 + (simpleHash(node.label) % 25), 
+      size: 150, 
     }));
 
     const nodeMap = new Map(positionedNodes.map(node => [node.id, node]));
@@ -131,6 +165,22 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
       </g>
     );
   };
+  
+  const RenderLines = () => (
+    <g>
+      {graphData.links.map((link, i) => (
+         <line
+             key={`line-${i}`}
+             x1={link.source?.x}
+             y1={link.source?.y}
+             x2={link.target?.x}
+             y2={link.target?.y}
+             stroke="hsl(var(--border))"
+             strokeWidth={1}
+         />
+      ))}
+    </g>
+  );
 
   return (
     <Card className="shadow-lg animate-in fade-in-50">
@@ -148,16 +198,29 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-            <h3 className="font-semibold text-lg text-primary mb-2">Spread Summary</h3>
-            <p className="text-foreground/90">{summary}</p>
+        <div className="flex justify-between items-start">
+            <div>
+                <h3 className="font-semibold text-lg text-primary mb-2">Spread Summary</h3>
+                <p className="text-foreground/90">{summary}</p>
+            </div>
+            {summary && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleSpeak(summary)}
+                disabled={isSpeaking}
+                aria-label="Speak summary"
+              >
+                {isSpeaking ? <Loader className="animate-spin" /> : <Volume2 />}
+              </Button>
+            )}
         </div>
         <Separator />
 
         <div className="w-full h-96">
             {(graphData.nodes.length > 0) ? (
-                <ResponsiveContainer width="100%" height="100%">
-                     <ScatterChart
+                 <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart
                         margin={{
                             top: 20,
                             right: 20,
@@ -165,30 +228,10 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                             left: 20,
                         }}
                         >
-                         <svg>
-                          <defs>
-                            {graphData.links.map((link, i) => (
-                                <linearGradient key={`gradient-${i}`} id={`gradient-${i}`}>
-                                    <stop offset="0%" stopColor="hsl(var(--border))" />
-                                    <stop offset="100%" stopColor="hsl(var(--border))" />
-                                </linearGradient>
-                            ))}
-                           </defs>
-                            {graphData.links.map((link, i) => (
-                              <line
-                                  key={`line-${i}`}
-                                  x1={link.source?.x}
-                                  y1={link.source?.y}
-                                  x2={link.target?.x}
-                                  y2={link.target?.y}
-                                  stroke="hsl(var(--border))"
-                                  strokeWidth={1}
-                              />
-                            ))}
-                        </svg>
                         <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
                         <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
                         <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
+                        <Customized component={RenderLines} />
                         <Scatter name="Nodes" data={graphData.nodes} shape={<NodeWithTimestamp />} />
                     </ScatterChart>
                 </ResponsiveContainer>
@@ -229,7 +272,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                                 {node.id}
                             </a>
                         </div>
-                        {node.timestamp && <Badge variant="outline" className="text-xs">{node.timestamp}</Badge>}
+                         {node.timestamp && <Badge variant="outline" className="text-xs">{node.timestamp}</Badge>}
                     </li>
                 ))}
                 </ul>

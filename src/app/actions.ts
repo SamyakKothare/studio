@@ -4,6 +4,7 @@ import { generateFactCheckVerdict, type GenerateFactCheckVerdictOutput } from "@
 import { factCheckImageAndText, type FactCheckImageAndTextInput, type FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
 import { analyzeTextForFallacies, type AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
 import { traceMisinformationSource, type TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
+import { textToSpeech, type TextToSpeechOutput } from "@/ai/flows/text-to-speech";
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
   if (!text) {
@@ -62,3 +63,17 @@ export async function traceSource(claim: string): Promise<TraceMisinformationSou
       throw new Error("Failed to get a source trace from the AI model.");
     }
   }
+
+export async function speakText(text: string): Promise<TextToSpeechOutput | null> {
+  if (!text) {
+    throw new Error("Input text is required for text-to-speech.");
+  }
+
+  try {
+    const result = await textToSpeech({ text });
+    return result;
+  } catch (error) {
+    console.error("Error in textToSpeech flow:", error);
+    throw new Error("Failed to generate audio from the AI model.");
+  }
+}
