@@ -77,29 +77,27 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      if (data.label) {
-        return (
-            <div className="p-3 bg-background border border-border rounded-lg shadow-lg max-w-xs text-sm">
-                <p className="font-bold text-base text-foreground mb-1 flex items-center gap-2">
-                    {typeToIcon[data.type as keyof typeof typeToIcon]}
-                    {data.label}
-                </p>
-                 {data.details && 
-                    <p className="text-muted-foreground mb-2 flex items-start gap-2">
-                        <Info className="size-4 mt-0.5 shrink-0" />
-                        <span>{data.details}</span>
-                    </p>
-                }
-                {data.location && 
-                    <p className="text-muted-foreground mb-2 flex items-center gap-2">
-                        <Globe className="size-4 shrink-0" />
-                        <span>{data.location}</span>
-                    </p>
-                }
-                {data.timestamp && <Badge variant="outline" className="text-xs">{data.timestamp}</Badge>}
-            </div>
-            );
-      }
+      return (
+          <div className="p-3 bg-background border border-border rounded-lg shadow-lg max-w-xs text-sm">
+              <p className="font-bold text-base text-foreground mb-1 flex items-center gap-2">
+                  {typeToIcon[data.type as keyof typeof typeToIcon]}
+                  {data.label}
+              </p>
+               {data.details && 
+                  <p className="text-muted-foreground mb-2 flex items-start gap-2">
+                      <Info className="size-4 mt-0.5 shrink-0" />
+                      <span>{data.details}</span>
+                  </p>
+              }
+              {data.location && 
+                  <p className="text-muted-foreground mb-2 flex items-center gap-2">
+                      <Globe className="size-4 shrink-0" />
+                      <span>{data.location}</span>
+                  </p>
+              }
+              {data.timestamp && <Badge variant="outline" className="text-xs">{data.timestamp}</Badge>}
+          </div>
+          );
     }
     return null;
   };
