@@ -80,7 +80,10 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
       if (data.label) {
         return (
             <div className="p-3 bg-background border border-border rounded-lg shadow-lg max-w-xs text-sm">
-                <p className="font-bold text-base text-foreground mb-1">{data.label}</p>
+                <p className="font-bold text-base text-foreground mb-1 flex items-center gap-2">
+                    {typeToIcon[data.type as keyof typeof typeToIcon]}
+                    {data.label}
+                </p>
                  {data.details && 
                     <p className="text-muted-foreground mb-2 flex items-start gap-2">
                         <Info className="size-4 mt-0.5 shrink-0" />
@@ -115,11 +118,6 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
     return (
       <g>
         <circle cx={cx} cy={cy} r={8} fill={color} />
-        {payload.timestamp && (
-          <text x={cx} y={cy + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10">
-            {payload.timestamp}
-          </text>
-        )}
       </g>
     );
   };
@@ -194,19 +192,14 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
            {nodes.length > 0 ? (
                 <ul className="space-y-4">
                 {nodes.map(node => (
-                    <li key={node.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                        <span className="flex-shrink-0 pt-1 sm:pt-0">{typeToIcon[node.type]}</span>
+                    <li key={node.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                        <span className="flex-shrink-0">{typeToIcon[node.type]}</span>
                         <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center gap-2">
-                                <span className="font-medium">{node.label}</span>
-                                {node.location && <Badge variant="secondary">{node.location}</Badge>}
-                            </div>
-                            <a href={node.id.startsWith('http') ? node.id : `https://www.google.com/search?q=${encodeURIComponent(node.id)}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate block">
+                            <span className="font-medium">{node.label}</span>
+                             <a href={node.id.startsWith('http') ? node.id : `https://www.google.com/search?q=${encodeURIComponent(node.id)}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate block">
                                 {node.id}
                             </a>
-                            {node.details && <p className="text-sm text-muted-foreground mt-1">{node.details}</p>}
                         </div>
-                        {node.timestamp && <Badge variant="outline" className="text-xs mt-2 sm:mt-0">{node.timestamp}</Badge>}
                     </li>
                 ))}
                 </ul>
@@ -249,7 +242,6 @@ function SourceGraphCardSkeleton() {
                         <div className="space-y-2 flex-1">
                            <Skeleton className="h-4 w-32" />
                            <Skeleton className="h-4 w-48" />
-                           <Skeleton className="h-4 w-full" />
                         </div>
                     </div>
                 ))}
