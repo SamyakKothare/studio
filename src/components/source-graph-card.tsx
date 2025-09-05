@@ -13,7 +13,7 @@ import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinform
 import { Share2, FileText, Newspaper, Megaphone, Globe, Info, Volume2, Loader, Square } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, Customized } from 'recharts';
-import { useMemo, useState, useTransition, useRef, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "./ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +42,25 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const { toast } = useToast();
+
+  const graphData = useMemo(() => {
+    if (!result || !result.nodes) return { nodes: [], links: [] };
+    const positionedNodes = result.nodes.map((node, index) => ({
+      ...node,
+      x: simpleHash(node.id) % 100, 
+      y: Math.floor(index / (Math.sqrt(result.nodes.length) || 1)) * 25 + (simpleHash(node.label) % 25), 
+      size: 150, 
+    }));
+
+    const nodeMap = new Map(positionedNodes.map(node => [node.id, node]));
+
+    const graphLinks = result.links.map(link => ({
+      source: nodeMap.get(link.source),
+      target: nodeMap.get(link.target)
+    })).filter(l => l.source && l.target);
+
+    return { nodes: positionedNodes, links: graphLinks };
+  }, [result]);
 
   const cleanupAudio = useCallback(() => {
     sourceNodeRef.current?.stop();
@@ -107,27 +126,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
     return null;
   }
 
-  const { nodes, links, summary, query } = result;
-
-  const graphData = useMemo(() => {
-    if (!nodes) return { nodes: [], links: [] };
-    const positionedNodes = nodes.map((node, index) => ({
-      ...node,
-      x: simpleHash(node.id) % 100, 
-      y: Math.floor(index / (Math.sqrt(nodes.length) || 1)) * 25 + (simpleHash(node.label) % 25), 
-      size: 150, 
-    }));
-
-    const nodeMap = new Map(positionedNodes.map(node => [node.id, node]));
-
-    const graphLinks = links.map(link => ({
-      source: nodeMap.get(link.source),
-      target: nodeMap.get(link.target)
-    })).filter(l => l.source && l.target);
-
-    return { nodes: positionedNodes, links: graphLinks };
-  }, [nodes, links]);
-
+  const { nodes, summary, query } = result;
 
   const typeToIcon = {
     origin: <FileText className="size-5" />,
@@ -438,3 +437,5 @@ function SourceGraphCardSkeleton() {
     </Card>
   );
 }
+
+    
