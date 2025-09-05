@@ -6,6 +6,7 @@ import { analyzeTextForFallacies, type AnalyzeTextForFallaciesOutput } from "@/a
 import { traceMisinformationSource, type TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { textToSpeech, type TextToSpeechOutput } from "@/ai/flows/text-to-speech";
 import { streamTextToSpeech } from "@/ai/flows/stream-text-to-speech";
+import { PassThrough } from "stream";
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
   if (!text) {
@@ -85,8 +86,26 @@ export async function speakTextStream(text: string) {
   }
 
   try {
-    const result = await streamTextToSpeech({text});
-    return result.stream;
+    const flowStream = await streamTextToSpeech({ text });
+
+    const passThrough = new PassThrough();
+    
+    // Pipe the chunks from the Genkit stream to the PassThrough stream
+    const forwardStream = async () => {
+      for await (const chunk of flowStream) {
+        if (chunk.media) {
+            const audioBytes = chunk.media.url.substring(
+              chunk.media.url.indexOf(',') + 1
+            );
+            passThrough.write(Buffer.from(audioBytes, 'base64'));
+          }
+      }
+      passThrough.end();
+    };
+
+    forwardStream();
+    
+    return passThrough;
   } catch (error) {
     console.error('Error in streamTextToSpeech flow:', error);
     throw new Error('Failed to generate audio from the AI model.');

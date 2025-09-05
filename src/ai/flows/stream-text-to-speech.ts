@@ -10,7 +10,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { streamFlow } from '@genkit-ai/next/streaming';
 
 const StreamTextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
@@ -19,14 +18,14 @@ export type StreamTextToSpeechInput = z.infer<
   typeof StreamTextToSpeechInputSchema
 >;
 
-export const streamTextToSpeech = streamFlow(
+export const streamTextToSpeech = ai.defineFlow(
   {
     name: 'streamTextToSpeech',
     inputSchema: StreamTextToSpeechInputSchema,
-    outputSchema: z.string(),
+    outputSchema: z.any(),
   },
-  async ({ text }, stream) => {
-    const { stream: ttsStream } = await ai.generate({
+  async ({ text }) => {
+    const { stream } = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
         responseModalities: ['AUDIO'],
@@ -39,14 +38,9 @@ export const streamTextToSpeech = streamFlow(
       prompt: text,
       stream: true,
     });
-
-    for await (const chunk of ttsStream) {
-      if (chunk.media) {
-        const audioBytes = chunk.media.url.substring(
-          chunk.media.url.indexOf(',') + 1
-        );
-        stream.write(audioBytes);
-      }
-    }
+    
+    // This is now returning a standard ReadableStream from the AI SDK
+    // which the action can pipe to the client.
+    return stream;
   }
 );

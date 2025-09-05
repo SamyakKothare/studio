@@ -32,7 +32,9 @@ export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalys
   const cleanupAudio = useCallback(() => {
     sourceNodeRef.current?.stop();
     sourceNodeRef.current = null;
-    audioContextRef.current?.close();
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+    }
     audioContextRef.current = null;
     setIsSpeaking(false);
   }, []);
@@ -45,12 +47,21 @@ export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalys
 
     setIsSpeaking(true);
     try {
-      const stream = await speakTextStream(text);
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+       const response = await fetch('/api/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to get audio stream');
+      }
+
+      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
       audioContextRef.current = newAudioContext;
 
       const pcmPlayer = new PCMPlayer(newAudioContext);
-      pcmPlayer.feed(stream);
+      pcmPlayer.feed(response.body);
       pcmPlayer.on('ended', cleanupAudio);
       pcmPlayer.on('error', (error) => {
         console.error("Playback error:", error);
@@ -150,51 +161,64 @@ class PCMPlayer {
     private audioCtx: AudioContext;
     private source: AudioBufferSourceNode | null = null;
     private eventHandlers: { [key: string]: ((...args: any[]) => void)[] } = {};
+    private audioQueue: AudioBuffer[] = [];
+    private isPlaying = false;
+    private sampleRate: number;
 
     constructor(audioCtx: AudioContext) {
         this.audioCtx = audioCtx;
+        this.sampleRate = audioCtx.sampleRate;
     }
 
-    async feed(stream: ReadableStream<string>) {
+    async feed(stream: ReadableStream<Uint8Array>) {
         const reader = stream.getReader();
-        const pcmChunks: Float32Array[] = [];
-        let totalLength = 0;
 
         try {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                
-                const buffer = Buffer.from(value, 'base64');
-                const pcmChunk = new Float32Array(buffer.length / 2);
+
+                const pcmChunk = new Int16Array(value.buffer, value.byteOffset, value.length / 2);
+                const float32Chunk = new Float32Array(pcmChunk.length);
                 for (let i = 0; i < pcmChunk.length; i++) {
-                    pcmChunk[i] = buffer.readInt16LE(i * 2) / 32768.0;
+                    float32Chunk[i] = pcmChunk[i] / 32768.0;
                 }
-                pcmChunks.push(pcmChunk);
-                totalLength += pcmChunk.length;
+                
+                if (this.audioCtx.state === 'closed') return;
+
+                const audioBuffer = this.audioCtx.createBuffer(1, float32Chunk.length, this.sampleRate);
+                audioBuffer.getChannelData(0).set(float32Chunk);
+
+                this.audioQueue.push(audioBuffer);
+                if (!this.isPlaying) {
+                    this.playQueue();
+                }
             }
-
-            if (this.audioCtx.state === 'closed') {
-              return;
-            }
-
-            const audioBuffer = this.audioCtx.createBuffer(1, totalLength, 24000);
-            const channelData = audioBuffer.getChannelData(0);
-
-            let offset = 0;
-            for (const chunk of pcmChunks) {
-                channelData.set(chunk, offset);
-                offset += chunk.length;
-            }
-
-            this.source = this.audioCtx.createBufferSource();
-            this.source.buffer = audioBuffer;
-            this.source.connect(this.audioCtx.destination);
-            this.source.start();
-            this.source.onended = () => this.emit('ended');
         } catch (error) {
             this.emit('error', error);
         }
+    }
+
+    playQueue() {
+        if (this.audioQueue.length === 0 || this.isPlaying || this.audioCtx.state === 'closed') {
+            if (this.audioQueue.length === 0 && !this.isPlaying) {
+                this.emit('ended');
+            }
+            return;
+        }
+
+        this.isPlaying = true;
+        const buffer = this.audioQueue.shift()!;
+        this.source = this.audioCtx.createBufferSource();
+        this.source.buffer = buffer;
+        this.source.connect(this.audioCtx.destination);
+        
+        this.source.onended = () => {
+            this.isPlaying = false;
+            this.playQueue();
+        };
+
+        this.source.start();
     }
 
     on(event: string, handler: (...args: any[]) => void) {
