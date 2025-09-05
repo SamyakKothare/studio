@@ -13,6 +13,7 @@ import {
   RotateCw,
   ChevronDown,
   BrainCircuit,
+  Share2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -50,7 +51,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
-import { checkFact, checkImageFact, analyzeFallacies } from "./actions";
+import { checkFact, checkImageFact, analyzeFallacies, traceSource } from "./actions";
 import { Logo } from "@/components/logo";
 import { VerdictCard } from "@/components/verdict-card";
 import { Welcome } from "@/components/welcome";
@@ -61,6 +62,8 @@ import type { FactCheckImageAndTextInput, FactCheckImageAndTextOutput } from "@/
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
 import { FallacyAnalysisCard } from "@/components/fallacy-analysis-card";
+import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
+import { SourceGraphCard } from "@/components/source-graph-card";
 
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
@@ -73,9 +76,14 @@ type FallacyAnalysisResult = AnalyzeTextForFallaciesOutput & {
   query: string;
 }
 
-type Result = FactCheckResult | FallacyAnalysisResult;
+type SourceTraceResult = TraceMisinformationSourceOutput & {
+  type: "source-trace";
+  query: string;
+}
 
-type InputMode = "text" | "image" | "voice" | "analyze";
+type Result = FactCheckResult | FallacyAnalysisResult | SourceTraceResult;
+
+type InputMode = "text" | "image" | "voice" | "analyze" | "trace";
 
 const trustedSources = [
   { name: "Wikipedia", icon: <BookCheck />, url: "https://www.wikipedia.org/" },
@@ -172,11 +180,42 @@ export default function Home() {
     })
   }
 
+  const handleSourceTrace = (query: string) => {
+    if (!query.trim()) {
+     toast({
+       title: "Input required",
+       description: "Please enter a claim to trace.",
+       variant: "destructive",
+     });
+     return;
+   }
+   setResult(null);
+   startTransition(async () => {
+     try {
+       const response = await traceSource(query);
+       if(response) {
+         const newResult: SourceTraceResult = { ...response, query, type: 'source-trace' };
+         setResult(newResult);
+       }
+     } catch (error) {
+       console.error("Source trace failed:", error);
+       toast({
+         title: "Error",
+         description: "Failed to get source trace result. Please try again.",
+         variant: "destructive",
+       });
+     }
+   })
+ }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMode === 'analyze') {
       handleFallacyCheck(text);
-    } else {
+    } else if (inputMode === 'trace') {
+      handleSourceTrace(text);
+    }
+    else {
       handleFactCheck(text);
     }
   };
@@ -218,6 +257,9 @@ export default function Home() {
        if (inputMode === 'analyze') {
          return <FallacyAnalysisCard isLoading={true} />
        }
+       if (inputMode === 'trace') {
+        return <SourceGraphCard isLoading={true} />
+      }
        return <VerdictCard isLoading={true} />
     }
     if (!result) {
@@ -229,6 +271,9 @@ export default function Home() {
     }
     if (result.type === 'fallacy-analysis') {
       return <FallacyAnalysisCard result={result} />
+    }
+    if (result.type === 'source-trace') {
+      return <SourceGraphCard result={result} />
     }
     return <Welcome />;
   }
@@ -337,7 +382,7 @@ export default function Home() {
                 <CardTitle>Submit a Claim for Verification</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-1 bg-muted rounded-lg flex gap-1 w-fit">
+                <div className="p-1 bg-muted rounded-lg flex gap-1 w-fit flex-wrap">
                   <Button
                       type="button"
                       size="sm"
@@ -374,36 +419,39 @@ export default function Home() {
                     >
                       <BrainCircuit/>Analyze
                     </Button>
+                     <Button
+                      type="button"
+                      size="sm"
+                      className={cn(inputMode === 'trace' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
+                      variant={inputMode === 'trace' ? "secondary" : "ghost"}
+                      onClick={() => setInputMode('trace')}
+                    >
+                      <Share2/>Trace Source
+                    </Button>
                 </div>
                 
-                {inputMode === 'text' && (
+                {(inputMode === 'text' || inputMode === 'trace' || inputMode === 'analyze') && (
                   <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <Textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
-                      placeholder="Enter a statement, claim, or question to fact-check..."
+                      placeholder={
+                        inputMode === 'text' ? "Enter a statement, claim, or question to fact-check..." :
+                        inputMode === 'analyze' ? "Enter a paragraph or argument to analyze for logical fallacies..." :
+                        "Enter a claim to trace its origin and spread..."
+                      }
                       className="min-h-[120px] text-base"
                       disabled={isPending}
                     />
-                    <Button type="submit" className="self-start" disabled={isPending}>
-                      <Sparkles className="mr-2"/>
-                      {isPending ? "Analyzing..." : "Fact Check"}
-                    </Button>
-                  </form>
-                )}
-
-                 {inputMode === 'analyze' && (
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <Textarea
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      placeholder="Enter a paragraph or argument to analyze for logical fallacies..."
-                      className="min-h-[120px] text-base"
-                      disabled={isPending}
-                    />
-                    <Button type="submit" className="self-start" disabled={isPending}>
-                      <BrainCircuit className="mr-2"/>
-                      {isPending ? "Analyzing..." : "Analyze for Fallacies"}
+                     <Button type="submit" className="self-start" disabled={isPending || !text.trim()}>
+                      {inputMode === 'text' && <Sparkles className="mr-2" />}
+                      {inputMode === 'analyze' && <BrainCircuit className="mr-2" />}
+                      {inputMode === 'trace' && <Share2 className="mr-2" />}
+                      {isPending ? "Analyzing..." : 
+                        inputMode === 'text' ? "Fact Check" :
+                        inputMode === 'analyze' ? "Analyze for Fallacies" :
+                        "Trace Source"
+                      }
                     </Button>
                   </form>
                 )}

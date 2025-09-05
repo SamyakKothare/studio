@@ -3,6 +3,7 @@
 import { generateFactCheckVerdict, type GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
 import { factCheckImageAndText, type FactCheckImageAndTextInput, type FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
 import { analyzeTextForFallacies, type AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
+import { traceMisinformationSource, type TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
   if (!text) {
@@ -45,5 +46,19 @@ export async function analyzeFallacies(text: string): Promise<AnalyzeTextForFall
     } catch (error) {
       console.error("Error in analyzeTextForFallacies flow:", error);
       throw new Error("Failed to get an analysis from the AI model.");
+    }
+  }
+
+export async function traceSource(claim: string): Promise<TraceMisinformationSourceOutput | null> {
+    if (!claim) {
+      throw new Error("Input claim is required for source tracing.");
+    }
+  
+    try {
+      const result = await traceMisinformationSource({ claim });
+      return result;
+    } catch (error) {
+      console.error("Error in traceMisinformationSource flow:", error);
+      throw new Error("Failed to get a source trace from the AI model.");
     }
   }
