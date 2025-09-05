@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -11,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { Share2, FileText, Newspaper, Megaphone } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, Line, Legend } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Scatter, XAxis, YAxis, Tooltip, Line } from 'recharts';
 import { useMemo } from "react";
 
 type SourceTraceResult = TraceMisinformationSourceOutput & {
@@ -50,7 +51,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
       ...node,
       x: simpleHash(node.id) % 100, // Position based on hash
       y: Math.floor(index / 4) * 20 + (simpleHash(node.label) % 20), // Stagger y-position
-      z: node.label.length, // Size based on label length
+      size: node.label.length * 10, // Size for scatter plot
     }));
 
     const nodeMap = new Map(positionedNodes.map(node => [node.id, node]));
@@ -73,13 +74,16 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
+      // payload[0] will be the scatter data
       const data = payload[0].payload;
-      return (
-        <div className="p-2 bg-background border border-border rounded-lg shadow-lg">
-          <p className="font-bold text-foreground">{data.label}</p>
-          <p className="text-sm text-muted-foreground">{data.id}</p>
-        </div>
-      );
+      if (data.label) {
+        return (
+            <div className="p-2 bg-background border border-border rounded-lg shadow-lg">
+                <p className="font-bold text-foreground">{data.label}</p>
+                <p className="text-sm text-muted-foreground">{data.id}</p>
+            </div>
+            );
+      }
     }
     return null;
   };
@@ -115,7 +119,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
         
         <div className="w-full h-96">
             <ResponsiveContainer width="100%" height="100%">
-                 <ScatterChart
+                 <ComposedChart
                     margin={{
                         top: 20,
                         right: 20,
@@ -123,29 +127,31 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                         left: 20,
                     }}
                     >
-                    <XAxis type="number" dataKey="x" hide />
-                    <YAxis type="number" dataKey="y" hide />
-                    <ZAxis type="number" dataKey="z" range={[100, 500]} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
+                    <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
+                    <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
+                    <Tooltip content={<CustomTooltip />} />
+                     
                      {graphData.links.map((link, i) => (
                         <Line
                             key={`line-${i}`}
-                            type="linear"
                             data={[link.source, link.target]}
                             dataKey="y"
                             stroke="hsl(var(--border))"
-                            strokeWidth={1}
+                            strokeWidth={1.5}
                             dot={false}
                             activeDot={false}
+                            isAnimationActive={false}
                             legendType="none"
                         />
                     ))}
-                    <Scatter name="Nodes" data={graphData.nodes} shape="circle">
-                        {graphData.nodes.map((entry, index) => (
-                          <ZAxis key={`cell-${index}`} dataKey="z" fill={typeToColor[entry.type] || '#8884d8'} />
+                    
+                    <Scatter name="Nodes" data={graphData.nodes} fill="#8884d8">
+                         {graphData.nodes.map((entry, index) => (
+                          <YAxis key={`cell-${index}`} dataKey="size" fill={typeToColor[entry.type] || '#8884d8'} />
                         ))}
                     </Scatter>
-                </ScatterChart>
+
+                </ComposedChart>
             </ResponsiveContainer>
         </div>
 
