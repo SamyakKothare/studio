@@ -20,6 +20,8 @@ const NodeSchema = z.object({
   label: z.string().describe('A short, display-friendly name for the source (e.g., "Reuters", "Fringe Blog", "Social Media User X").'),
   type: z.enum(['origin', 'amplifier', 'news_outlet', 'social_media']).describe('The category of the source.'),
   timestamp: z.string().optional().describe('The approximate date or timestamp when the claim appeared on this source (e.g., "October 2018").'),
+  location: z.string().optional().describe('The geographical location of the source (e.g., "USA", "Online").'),
+  details: z.string().optional().describe('A brief, one-sentence description of the source entity.'),
 });
 
 const LinkSchema = z.object({
@@ -49,8 +51,13 @@ Claim: {{{claim}}}
 1.  **Identify the Origin**: Conduct a deep search to find the earliest credible instance of this claim. This could be a fringe blog, a specific social media post, or an obscure forum. Label this as the 'origin'.
 2.  **Track the Spread**: Identify key websites, major news outlets, and influential social media accounts that picked up and spread the claim. Label these as 'amplifier', 'news_outlet', or 'social_media'.
 3.  **Construct the Network**:
-    *   Create a 'node' for each source you identify. The 'id' should be the URL if possible, or a unique descriptive name (e.g., 'user-on-twitter-@example'). The 'label' should be a clean name (e.g., "Example News").
-    *   For each source, try to identify the approximate date or timestamp of when the claim appeared and include it in a 'timestamp' field. If a timestamp cannot be found, you can omit the field.
+    *   Create a 'node' for each source you identify.
+    *   **id**: The URL if possible, or a unique descriptive name (e.g., 'user-on-twitter-@example').
+    *   **label**: A clean, display-friendly name (e.g., "Example News").
+    *   **type**: The category of the source.
+    *   **timestamp**: The approximate date the claim appeared. If a date cannot be found, omit this field.
+    *   **location**: The geographical location of the source (e.g., "USA", "UK", "Online"). If unknown, omit this field.
+    *   **details**: A brief, one-sentence description of the source (e.g., "A major international news organization.").
     *   Create 'links' to show the flow of information. For example, if 'Fringe Blog' (source) was cited by 'Major News Outlet' (target), create a link between them.
 4.  **Summarize the Findings**: Write a brief narrative explaining the likely origin of the claim and the path it took to spread.
 

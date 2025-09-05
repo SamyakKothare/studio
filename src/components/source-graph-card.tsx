@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
-import { Share2, FileText, Newspaper, Megaphone } from "lucide-react";
+import { Share2, FileText, Newspaper, Megaphone, Globe, Info } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { ResponsiveContainer, ComposedChart, Scatter, XAxis, YAxis, Tooltip, ZAxis, Legend, Line, Customized } from 'recharts';
 import { useMemo } from "react";
@@ -48,6 +48,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   const { nodes, links, summary, query } = result;
 
   const graphData = useMemo(() => {
+    if (!nodes) return { nodes: [], links: [] };
     const positionedNodes = nodes.map((node, index) => ({
       ...node,
       x: simpleHash(node.id) % 100, // Position based on hash
@@ -78,10 +79,21 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
       const data = payload[0].payload;
       if (data.label) {
         return (
-            <div className="p-2 bg-background border border-border rounded-lg shadow-lg max-w-xs">
-                <p className="font-bold text-foreground">{data.label}</p>
-                <p className="text-sm text-muted-foreground break-all">{data.id}</p>
-                {data.timestamp && <p className="text-xs text-primary mt-1">{data.timestamp}</p>}
+            <div className="p-3 bg-background border border-border rounded-lg shadow-lg max-w-xs text-sm">
+                <p className="font-bold text-base text-foreground mb-1">{data.label}</p>
+                 {data.details && 
+                    <p className="text-muted-foreground mb-2 flex items-start gap-2">
+                        <Info className="size-4 mt-0.5 shrink-0" />
+                        <span>{data.details}</span>
+                    </p>
+                }
+                {data.location && 
+                    <p className="text-muted-foreground mb-2 flex items-center gap-2">
+                        <Globe className="size-4 shrink-0" />
+                        <span>{data.location}</span>
+                    </p>
+                }
+                {data.timestamp && <Badge variant="outline" className="text-xs">{data.timestamp}</Badge>}
             </div>
             );
       }
@@ -135,58 +147,72 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
         <Separator />
         
         <div className="w-full h-96">
-            <ResponsiveContainer width="100%" height="100%">
-                 <ComposedChart
-                    margin={{
-                        top: 20,
-                        right: 20,
-                        bottom: 20,
-                        left: 20,
-                    }}
-                    >
-                    <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
-                    <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
-                    <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
-                     
-                    {/* Render lines first */}
-                    <Customized data={graphData.links} content={(props) => (
-                      <g>
-                        {graphData.links.map((link, i) => (
-                          <line
-                            key={`line-${i}`}
-                            x1={link.source?.x}
-                            y1={link.source?.y}
-                            x2={link.target?.x}
-                            y2={link.target?.y}
-                            stroke="hsl(var(--border))"
-                            strokeWidth={1}
-                          />
-                        ))}
-                      </g>
-                    )} />
-                    
-                    <Scatter name="Nodes" data={graphData.nodes} shape={<NodeWithTimestamp />} />
+            {(graphData.nodes.length > 0 || graphData.links.length > 0) ? (
+                <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                        margin={{
+                            top: 20,
+                            right: 20,
+                            bottom: 20,
+                            left: 20,
+                        }}
+                        >
+                        <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
+                        <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
+                        <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
+                        
+                        {/* Render lines first */}
+                        <Customized data={graphData.links} content={() => (
+                        <g>
+                            {graphData.links.map((link, i) => (
+                            <line
+                                key={`line-${i}`}
+                                x1={link.source?.x}
+                                y1={link.source?.y}
+                                x2={link.target?.x}
+                                y2={link.target?.y}
+                                stroke="hsl(var(--border))"
+                                strokeWidth={1}
+                            />
+                            ))}
+                        </g>
+                        )} />
+                        
+                        <Scatter name="Nodes" data={graphData.nodes} shape={<NodeWithTimestamp />} />
 
-                </ComposedChart>
-            </ResponsiveContainer>
+                    </ComposedChart>
+                </ResponsiveContainer>
+            ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                    No network graph to display.
+                </div>
+            )}
         </div>
 
         <div>
           <h3 className="font-semibold text-lg text-primary mb-3">Detected Sources ({nodes.length})</h3>
-          <ul className="space-y-4">
-            {nodes.map(node => (
-                <li key={node.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                    <span className="flex-shrink-0">{typeToIcon[node.type]}</span>
-                    <div className="flex-1 overflow-hidden">
-                        <span className="font-medium">{node.label}</span>
-                        <a href={node.id.startsWith('http') ? node.id : `https://www.google.com/search?q=${encodeURIComponent(node.id)}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate">
-                            {node.id}
-                        </a>
-                    </div>
-                     {node.timestamp && <Badge variant="outline" className="text-xs">{node.timestamp}</Badge>}
-                </li>
-            ))}
-          </ul>
+           {nodes.length > 0 ? (
+                <ul className="space-y-4">
+                {nodes.map(node => (
+                    <li key={node.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                        <span className="flex-shrink-0 pt-1 sm:pt-0">{typeToIcon[node.type]}</span>
+                        <div className="flex-1 overflow-hidden">
+                            <div className="flex items-center gap-2">
+                                <span className="font-medium">{node.label}</span>
+                                {node.location && <Badge variant="secondary">{node.location}</Badge>}
+                            </div>
+                            <a href={node.id.startsWith('http') ? node.id : `https://www.google.com/search?q=${encodeURIComponent(node.id)}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline truncate block">
+                                {node.id}
+                            </a>
+                            {node.details && <p className="text-sm text-muted-foreground mt-1">{node.details}</p>}
+                        </div>
+                        {node.timestamp && <Badge variant="outline" className="text-xs mt-2 sm:mt-0">{node.timestamp}</Badge>}
+                    </li>
+                ))}
+                </ul>
+           ) : (
+             <p className="text-muted-foreground">No sources were identified for this claim.</p>
+           )}
         </div>
       </CardContent>
     </Card>
@@ -220,9 +246,10 @@ function SourceGraphCardSkeleton() {
                 {[...Array(3)].map((_, i) => (
                     <div key={i} className="flex items-center gap-4">
                         <Skeleton className="size-8 rounded-full" />
-                        <div className="space-y-2">
+                        <div className="space-y-2 flex-1">
                            <Skeleton className="h-4 w-32" />
                            <Skeleton className="h-4 w-48" />
+                           <Skeleton className="h-4 w-full" />
                         </div>
                     </div>
                 ))}
