@@ -19,6 +19,7 @@ const NodeSchema = z.object({
   id: z.string().describe('A unique identifier for the node, typically the URL or a unique name for a non-URL entity.'),
   label: z.string().describe('A short, display-friendly name for the source (e.g., "Reuters", "Fringe Blog", "Social Media User X").'),
   type: z.enum(['origin', 'amplifier', 'news_outlet', 'social_media']).describe('The category of the source.'),
+  timestamp: z.string().optional().describe('The approximate date or timestamp when the claim appeared on this source (e.g., "October 2018").'),
 });
 
 const LinkSchema = z.object({
@@ -49,6 +50,7 @@ Claim: {{{claim}}}
 2.  **Track the Spread**: Identify key websites, major news outlets, and influential social media accounts that picked up and spread the claim. Label these as 'amplifier', 'news_outlet', or 'social_media'.
 3.  **Construct the Network**:
     *   Create a 'node' for each source you identify. The 'id' should be the URL if possible, or a unique descriptive name (e.g., 'user-on-twitter-@example'). The 'label' should be a clean name (e.g., "Example News").
+    *   For each source, try to identify the approximate date or timestamp of when the claim appeared and include it in a 'timestamp' field.
     *   Create 'links' to show the flow of information. For example, if 'Fringe Blog' (source) was cited by 'Major News Outlet' (target), create a link between them.
 4.  **Summarize the Findings**: Write a brief narrative explaining the likely origin of the claim and the path it took to spread.
 
