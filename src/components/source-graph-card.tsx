@@ -116,6 +116,11 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
     return (
       <g>
         <circle cx={cx} cy={cy} r={8} fill={color} />
+        {payload.timestamp && (
+            <text x={cx} y={cy + 18} textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))">
+              {payload.timestamp}
+            </text>
+          )}
       </g>
     );
   };
@@ -157,7 +162,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                         <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
                         <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
                         
-                        {/* Render lines first */}
+                        {/* Render lines first (bottom layer) */}
                         <Customized data={graphData.links} content={() => (
                         <g>
                             {graphData.links.map((link, i) => (
@@ -174,6 +179,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                         </g>
                         )} />
                         
+                        {/* Render nodes on top of lines */}
                         <Scatter name="Nodes" data={graphData.nodes} shape={<NodeWithTimestamp />} />
 
                     </ComposedChart>
