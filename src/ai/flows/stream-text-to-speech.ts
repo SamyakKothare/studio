@@ -25,8 +25,8 @@ export const streamTextToSpeech = streamFlow(
     inputSchema: StreamTextToSpeechInputSchema,
     outputSchema: z.string(),
   },
-  async ({ text }) => {
-    const { stream } = await ai.generate({
+  async ({ text }, stream) => {
+    const { stream: ttsStream } = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
         responseModalities: ['AUDIO'],
@@ -40,22 +40,13 @@ export const streamTextToSpeech = streamFlow(
       stream: true,
     });
 
-    const chunks: string[] = [];
-    for await (const chunk of stream) {
+    for await (const chunk of ttsStream) {
       if (chunk.media) {
         const audioBytes = chunk.media.url.substring(
           chunk.media.url.indexOf(',') + 1
         );
-        chunks.push(audioBytes);
+        stream.write(audioBytes);
       }
     }
-    return new ReadableStream({
-      pull(controller) {
-        for (const chunk of chunks) {
-          controller.enqueue(chunk);
-        }
-        controller.close();
-      },
-    });
   }
 );
