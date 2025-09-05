@@ -6,7 +6,6 @@ import { analyzeTextForFallacies, type AnalyzeTextForFallaciesOutput } from "@/a
 import { traceMisinformationSource, type TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { textToSpeech, type TextToSpeechOutput } from "@/ai/flows/text-to-speech";
 import { streamTextToSpeech } from "@/ai/flows/stream-text-to-speech";
-import { PassThrough } from "stream";
 
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
@@ -87,38 +86,15 @@ export async function speakTextStream(text: string) {
   }
 
   try {
-    // Get the streaming flow from Genkit
     const flowStream = await streamTextToSpeech({ text });
 
     if (!flowStream) {
       throw new Error('The streaming flow did not return a valid stream.');
     }
     
-    // Create a pass-through stream to pipe the data
-    const passThrough = new PassThrough();
-
-    // Asynchronously process the stream from the AI SDK
-    (async () => {
-      try {
-        for await (const chunk of flowStream) {
-            // The chunk from the AI SDK is a structured object, 
-            // we need to extract the actual audio data.
-            const audioChunk = chunk.output?.content[0]?.data;
-            if (audioChunk) {
-                // Convert base64 to buffer and write to our stream
-                passThrough.write(Buffer.from(audioChunk, 'base64'));
-            }
-        }
-      } catch (streamError) {
-        console.error('Error processing stream from AI SDK:', streamError);
-        passThrough.end(); // End the stream on error
-      } finally {
-        passThrough.end(); // End the stream when the AI stream is done
-      }
-    })();
-
-    // Return the pass-through stream to the API route handler
-    return passThrough;
+    // This is now returning a standard ReadableStream from the AI SDK
+    // which the action can pipe to the client.
+    return flowStream;
 
   } catch (error) {
     console.error('Error in streamTextToSpeech flow:', error);

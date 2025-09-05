@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
 import type { FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
 import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert, Volume2, Loader, Square } from "lucide-react";
-import { speakTextStream } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {

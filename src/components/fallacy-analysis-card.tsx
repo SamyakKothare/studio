@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
 import { BrainCircuit, BookOpenCheck, Volume2, Loader, Square } from "lucide-react";
 import { Button } from "./ui/button";
-import { speakTextStream } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
 type FallacyAnalysisResult = AnalyzeTextForFallaciesOutput & {

@@ -16,7 +16,6 @@ import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, Cust
 import { useMemo, useState, useTransition, useRef, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "./ui/button";
-import { speakTextStream } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
 type SourceTraceResult = TraceMisinformationSourceOutput & {
