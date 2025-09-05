@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from 'react';
@@ -217,27 +218,27 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
           {explanation && (
              <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
-                <AccordionTrigger>
-                   <div className="flex justify-between w-full items-center">
+                <div className="flex items-center justify-between w-full">
+                  <AccordionTrigger className="flex-1">
                     <span className="flex items-center gap-2 text-primary font-medium">
                         <Info className="size-4" />
                         Explain Further
                     </span>
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={(e) => {
-                           e.stopPropagation();
-                           handleSpeak(explanation);
-                        }}
-                        disabled={isSpeaking}
-                        className='mr-2'
-                        aria-label="Speak explanation"
-                    >
-                        {isSpeaking ? <Loader className="animate-spin" /> : <Volume2 />}
-                    </Button>
-                  </div>
-                </AccordionTrigger>
+                  </AccordionTrigger>
+                  <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          handleSpeak(explanation);
+                      }}
+                      disabled={isSpeaking}
+                      className='mr-2'
+                      aria-label="Speak explanation"
+                  >
+                      {isSpeaking ? <Loader className="animate-spin" /> : <Volume2 />}
+                  </Button>
+                </div>
                 <AccordionContent className="text-base text-foreground/90">
                   {explanation}
                 </AccordionContent>
