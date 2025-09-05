@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
-import { BrainCircuit, BookOpenCheck, Volume2, Loader } from "lucide-react";
+import { BrainCircuit, BookOpenCheck, Volume2, Loader, Square } from "lucide-react";
 import { Button } from "./ui/button";
-import { speakText } from "@/app/actions";
+import { speakTextStream } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
 type FallacyAnalysisResult = AnalyzeTextForFallaciesOutput & {
@@ -24,9 +24,54 @@ interface FallacyAnalysisCardProps {
 }
 
 export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalysisCardProps) {
-  const [isSpeaking, startSpeakingTransition] = useTransition();
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const { toast } = useToast();
+
+  const cleanupAudio = useCallback(() => {
+    sourceNodeRef.current?.stop();
+    sourceNodeRef.current = null;
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
+    setIsSpeaking(false);
+  }, []);
+
+  const handleSpeak = async (text: string) => {
+    if (isSpeaking) {
+      cleanupAudio();
+      return;
+    }
+
+    setIsSpeaking(true);
+    try {
+      const stream = await speakTextStream(text);
+      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = newAudioContext;
+
+      const pcmPlayer = new PCMPlayer(newAudioContext);
+      pcmPlayer.feed(stream);
+      pcmPlayer.on('ended', cleanupAudio);
+      pcmPlayer.on('error', (error) => {
+        console.error("Playback error:", error);
+        toast({
+          title: "Audio Playback Error",
+          description: "Could not play the generated audio.",
+          variant: "destructive",
+        });
+        cleanupAudio();
+      });
+      sourceNodeRef.current = pcmPlayer.getSourceNode();
+    } catch (error) {
+      console.error("Failed to generate speech:", error);
+      toast({
+        title: "Speech Generation Failed",
+        description: "Could not generate audio for the selected text.",
+        variant: "destructive",
+      });
+      setIsSpeaking(false);
+    }
+  };
 
   if (isLoading) {
     return <FallacyAnalysisCardSkeleton />;
@@ -37,34 +82,6 @@ export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalys
   }
 
   const { fallacies, query } = result;
-
-  const handleSpeak = (text: string) => {
-    if (audio?.src && !audio.paused) {
-      audio.pause();
-      audio.currentTime = 0;
-      setAudio(null);
-      return;
-    }
-
-    startSpeakingTransition(async () => {
-      try {
-        const response = await speakText(text);
-        if (response?.audioDataUri) {
-          const newAudio = new Audio(response.audioDataUri);
-          setAudio(newAudio);
-          newAudio.play();
-          newAudio.onended = () => setAudio(null);
-        }
-      } catch (error) {
-        console.error("Failed to generate speech:", error);
-        toast({
-          title: "Speech Generation Failed",
-          description: "Could not generate audio for the selected text.",
-          variant: "destructive",
-        });
-      }
-    });
-  };
 
   const fullExplanation = fallacies.map(f => `${f.fallacy}. Quote: ${f.excerpt}. Explanation: ${f.explanation}`).join('\n');
 
@@ -88,10 +105,13 @@ export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalys
                 size="icon"
                 variant="ghost"
                 onClick={() => handleSpeak(fullExplanation)}
-                disabled={isSpeaking}
-                aria-label="Speak explanation"
+                aria-label={isSpeaking ? "Stop speaking" : "Speak explanation"}
               >
-                {isSpeaking ? <Loader className="animate-spin" /> : <Volume2 />}
+                {isSpeaking ? (
+                  sourceNodeRef.current ? <Square /> : <Loader className="animate-spin" />
+                ) : (
+                  <Volume2 />
+                )}
               </Button>
             )}
         </div>
@@ -125,6 +145,76 @@ export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalys
     </Card>
   );
 }
+
+class PCMPlayer {
+    private audioCtx: AudioContext;
+    private source: AudioBufferSourceNode | null = null;
+    private eventHandlers: { [key: string]: ((...args: any[]) => void)[] } = {};
+
+    constructor(audioCtx: AudioContext) {
+        this.audioCtx = audioCtx;
+    }
+
+    async feed(stream: ReadableStream<string>) {
+        const reader = stream.getReader();
+        const pcmChunks: Float32Array[] = [];
+        let totalLength = 0;
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const buffer = Buffer.from(value, 'base64');
+                const pcmChunk = new Float32Array(buffer.length / 2);
+                for (let i = 0; i < pcmChunk.length; i++) {
+                    pcmChunk[i] = buffer.readInt16LE(i * 2) / 32768.0;
+                }
+                pcmChunks.push(pcmChunk);
+                totalLength += pcmChunk.length;
+            }
+
+            if (this.audioCtx.state === 'closed') {
+              return;
+            }
+
+            const audioBuffer = this.audioCtx.createBuffer(1, totalLength, 24000);
+            const channelData = audioBuffer.getChannelData(0);
+
+            let offset = 0;
+            for (const chunk of pcmChunks) {
+                channelData.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            this.source = this.audioCtx.createBufferSource();
+            this.source.buffer = audioBuffer;
+            this.source.connect(this.audioCtx.destination);
+            this.source.start();
+            this.source.onended = () => this.emit('ended');
+        } catch (error) {
+            this.emit('error', error);
+        }
+    }
+
+    on(event: string, handler: (...args: any[]) => void) {
+        if (!this.eventHandlers[event]) {
+            this.eventHandlers[event] = [];
+        }
+        this.eventHandlers[event].push(handler);
+    }
+
+    emit(event: string, ...args: any[]) {
+        if (this.eventHandlers[event]) {
+            this.eventHandlers[event].forEach(handler => handler(...args));
+        }
+    }
+
+    getSourceNode() {
+      return this.source;
+    }
+}
+
 
 function FallacyAnalysisCardSkeleton() {
   return (
