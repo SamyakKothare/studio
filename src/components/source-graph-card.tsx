@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { Share2, FileText, Newspaper, Megaphone, Globe, Info } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { ResponsiveContainer, ComposedChart, Scatter, XAxis, YAxis, Tooltip, ZAxis, Legend, Line, Customized } from 'recharts';
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, ZAxis } from 'recharts';
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 
@@ -83,13 +83,13 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                   {typeToIcon[data.type as keyof typeof typeToIcon]}
                   {data.label}
               </p>
-               {data.details && 
+               {data.details &&
                   <p className="text-muted-foreground mb-2 flex items-start gap-2">
                       <Info className="size-4 mt-0.5 shrink-0" />
                       <span>{data.details}</span>
                   </p>
               }
-              {data.location && 
+              {data.location &&
                   <p className="text-muted-foreground mb-2 flex items-center gap-2">
                       <Globe className="size-4 shrink-0" />
                       <span>{data.location}</span>
@@ -101,7 +101,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
     }
     return null;
   };
-  
+
   const typeToColor = {
     origin: 'hsl(var(--destructive))',
     amplifier: 'hsl(var(--chart-4))',
@@ -112,7 +112,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   const NodeWithTimestamp = (props: any) => {
     const { cx, cy, payload } = props;
     const color = typeToColor[payload.type as keyof typeof typeToColor] || '#8884d8';
-    
+
     return (
       <g>
         <circle cx={cx} cy={cy} r={8} fill={color} />
@@ -146,11 +146,11 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
             <p className="text-foreground/90">{summary}</p>
         </div>
         <Separator />
-        
+
         <div className="w-full h-96">
             {(graphData.nodes.length > 0 || graphData.links.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart
+                    <ScatterChart
                         margin={{
                             top: 20,
                             right: 20,
@@ -158,15 +158,16 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                             left: 20,
                         }}
                         >
-                        <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
-                        <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
-                        <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
-                        
-                        {/* Render lines first (bottom layer) */}
-                        <Customized data={graphData.links} content={() => (
-                        <g>
-                            {graphData.links.map((link, i) => (
-                            <line
+                         <defs>
+                          {graphData.links.map((link, i) => (
+                              <linearGradient key={`gradient-${i}`} id={`gradient-${i}`}>
+                                  <stop offset="0%" stopColor="hsl(var(--border))" />
+                                  <stop offset="100%" stopColor="hsl(var(--border))" />
+                              </linearGradient>
+                          ))}
+                        </defs>
+                        {graphData.links.map((link, i) => (
+                           <line
                                 key={`line-${i}`}
                                 x1={link.source?.x}
                                 y1={link.source?.y}
@@ -174,15 +175,13 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                                 y2={link.target?.y}
                                 stroke="hsl(var(--border))"
                                 strokeWidth={1}
-                            />
-                            ))}
-                        </g>
-                        )} />
-                        
-                        {/* Render nodes on top of lines */}
+                           />
+                        ))}
+                        <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
+                        <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
+                        <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
                         <Scatter name="Nodes" data={graphData.nodes} shape={<NodeWithTimestamp />} />
-
-                    </ComposedChart>
+                    </ScatterChart>
                 </ResponsiveContainer>
             ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
