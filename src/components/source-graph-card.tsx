@@ -14,6 +14,7 @@ import { Share2, FileText, Newspaper, Megaphone } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { ResponsiveContainer, ComposedChart, Scatter, XAxis, YAxis, Tooltip, ZAxis, Legend, Line, Customized } from 'recharts';
 import { useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
 
 type SourceTraceResult = TraceMisinformationSourceOutput & {
   query: string;
