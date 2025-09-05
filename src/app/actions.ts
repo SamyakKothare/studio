@@ -2,6 +2,7 @@
 
 import { generateFactCheckVerdict, type GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
 import { factCheckImageAndText, type FactCheckImageAndTextInput, type FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
+import { analyzeTextForFallacies, type AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
   if (!text) {
@@ -30,5 +31,19 @@ export async function checkImageFact(input: FactCheckImageAndTextInput): Promise
     } catch (error) {
       console.error("Error in factCheckImageAndText flow:", error);
       throw new Error("Failed to get a verdict from the AI model for the image.");
+    }
+  }
+
+export async function analyzeFallacies(text: string): Promise<AnalyzeTextForFallaciesOutput | null> {
+    if (!text) {
+      throw new Error("Input text is required for fallacy analysis.");
+    }
+  
+    try {
+      const result = await analyzeTextForFallacies({ text });
+      return result;
+    } catch (error) {
+      console.error("Error in analyzeTextForFallacies flow:", error);
+      throw new Error("Failed to get an analysis from the AI model.");
     }
   }

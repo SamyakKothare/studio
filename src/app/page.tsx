@@ -12,6 +12,7 @@ import {
   Trash2,
   RotateCw,
   ChevronDown,
+  BrainCircuit,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -49,7 +50,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
-import { checkFact, checkImageFact } from "./actions";
+import { checkFact, checkImageFact, analyzeFallacies } from "./actions";
 import { Logo } from "@/components/logo";
 import { VerdictCard } from "@/components/verdict-card";
 import { Welcome } from "@/components/welcome";
@@ -58,12 +59,23 @@ import { VoiceInput } from "@/components/voice-input";
 import { buttonVariants } from "@/components/ui/button";
 import type { FactCheckImageAndTextInput, FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
+import { FallacyAnalysisCard } from "@/components/fallacy-analysis-card";
+
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
+  type: "fact-check";
   query: string;
 };
 
-type InputMode = "text" | "image" | "voice";
+type FallacyAnalysisResult = AnalyzeTextForFallaciesOutput & {
+  type: "fallacy-analysis";
+  query: string;
+}
+
+type Result = FactCheckResult | FallacyAnalysisResult;
+
+type InputMode = "text" | "image" | "voice" | "analyze";
 
 const trustedSources = [
   { name: "Wikipedia", icon: <BookCheck />, url: "https://www.wikipedia.org/" },
@@ -75,7 +87,7 @@ const trustedSources = [
 export default function Home() {
   const [isPending, startTransition] = useTransition();
   const [text, setText] = useState("");
-  const [result, setResult] = useState<FactCheckResult | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
   const [history, setHistory] = useState<FactCheckResult[]>([]);
   const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("text");
@@ -96,7 +108,7 @@ export default function Home() {
       try {
         const response = await checkFact(query);
         if (response) {
-          const newResult = { ...response, query };
+          const newResult: FactCheckResult = { ...response, query, type: 'fact-check' };
           setResult(newResult);
           setHistory((prevHistory) => [newResult, ...prevHistory]);
         }
@@ -117,7 +129,7 @@ export default function Home() {
       try {
         const response = await checkImageFact(input);
         if (response) {
-          const newResult = { ...response, query: input.query };
+          const newResult: FactCheckResult = { ...response, query: input.query, type: 'fact-check' };
           setResult(newResult);
           setHistory((prevHistory) => [newResult, ...prevHistory]);
         }
@@ -132,9 +144,41 @@ export default function Home() {
     });
   };
 
+  const handleFallacyCheck = (query: string) => {
+     if (!query.trim()) {
+      toast({
+        title: "Input required",
+        description: "Please enter some text to analyze.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setResult(null);
+    startTransition(async () => {
+      try {
+        const response = await analyzeFallacies(query);
+        if(response) {
+          const newResult: FallacyAnalysisResult = { ...response, query, type: 'fallacy-analysis' };
+          setResult(newResult);
+        }
+      } catch (error) {
+        console.error("Fallacy analysis failed:", error);
+        toast({
+          title: "Error",
+          description: "Failed to get fallacy analysis result. Please try again.",
+          variant: "destructive",
+        });
+      }
+    })
+  }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    handleFactCheck(text);
+    if (inputMode === 'analyze') {
+      handleFallacyCheck(text);
+    } else {
+      handleFactCheck(text);
+    }
   };
 
   const handleSelectHistory = (selectedResult: FactCheckResult) => {
@@ -167,6 +211,26 @@ export default function Home() {
   const getVerdictColor = (verdict?: 'TRUE' | 'FAKE') => {
     if (!verdict) return 'bg-muted';
     return verdict === 'TRUE' ? 'bg-green-500' : 'bg-red-500';
+  }
+
+  const renderResult = () => {
+    if (isPending) {
+       if (inputMode === 'analyze') {
+         return <FallacyAnalysisCard isLoading={true} />
+       }
+       return <VerdictCard isLoading={true} />
+    }
+    if (!result) {
+      return <Welcome />
+    }
+
+    if (result.type === 'fact-check') {
+      return <VerdictCard result={result} />
+    }
+    if (result.type === 'fallacy-analysis') {
+      return <FallacyAnalysisCard result={result} />
+    }
+    return <Welcome />;
   }
 
   return (
@@ -281,7 +345,7 @@ export default function Home() {
                       variant={inputMode === 'text' ? "secondary" : "ghost"}
                       onClick={() => setInputMode('text')}
                     >
-                      <MessageSquare/>Text
+                      <MessageSquare/>Fact-Check
                     </Button>
                   <Button
                       type="button"
@@ -301,6 +365,15 @@ export default function Home() {
                     >
                       <Mic/>Voice
                     </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className={cn(inputMode === 'analyze' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
+                      variant={inputMode === 'analyze' ? "secondary" : "ghost"}
+                      onClick={() => setInputMode('analyze')}
+                    >
+                      <BrainCircuit/>Analyze
+                    </Button>
                 </div>
                 
                 {inputMode === 'text' && (
@@ -315,6 +388,22 @@ export default function Home() {
                     <Button type="submit" className="self-start" disabled={isPending}>
                       <Sparkles className="mr-2"/>
                       {isPending ? "Analyzing..." : "Fact Check"}
+                    </Button>
+                  </form>
+                )}
+
+                 {inputMode === 'analyze' && (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <Textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="Enter a paragraph or argument to analyze for logical fallacies..."
+                      className="min-h-[120px] text-base"
+                      disabled={isPending}
+                    />
+                    <Button type="submit" className="self-start" disabled={isPending}>
+                      <BrainCircuit className="mr-2"/>
+                      {isPending ? "Analyzing..." : "Analyze for Fallacies"}
                     </Button>
                   </form>
                 )}
@@ -336,9 +425,7 @@ export default function Home() {
             </Card>
 
             <div className="mt-8">
-              {isPending && <VerdictCard isLoading={true} />}
-              {!isPending && result && <VerdictCard result={result} />}
-              {!isPending && !result && <Welcome />}
+              {renderResult()}
             </div>
           </div>
         </main>
