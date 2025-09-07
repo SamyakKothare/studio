@@ -1,3 +1,4 @@
+
 // src/app/api/speak/route.ts
 import { streamTextToSpeech } from '@/ai/flows/stream-text-to-speech';
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,11 +16,14 @@ export async function POST(req: NextRequest) {
         throw new Error('The streaming flow did not return a valid stream.');
     }
 
+    // This ReadableStream is what we will send to the client.
     const readableStream = new ReadableStream({
         async start(controller) {
+            // Iterate over the structured stream from the Genkit flow.
             for await (const chunk of flowStream) {
-                if (chunk?.output?.custom?.chunk) {
-                    controller.enqueue(chunk.output.custom.chunk);
+                // The raw audio data is in the `output` property of each chunk.
+                if (chunk?.output) {
+                    controller.enqueue(chunk.output);
                 }
             }
             controller.close();
