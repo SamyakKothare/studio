@@ -40,3 +40,4 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Failed to generate audio', { status: 500 });
   }
 }
+
