@@ -10,13 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
-import { Share2, FileText, Newspaper, Megaphone, Globe, Info, Volume2, Loader, Square } from "lucide-react";
+import { Share2, FileText, Newspaper, Megaphone, Globe, Info } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, Customized } from 'recharts';
-import { useMemo, useState, useCallback, useRef } from "react";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "./ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 type SourceTraceResult = TraceMisinformationSourceOutput & {
   query: string;
@@ -38,11 +36,6 @@ const simpleHash = (str: string) => {
 };
 
 export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardProps) {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
-  const { toast } = useToast();
-
   const graphData = useMemo(() => {
     if (!result || !result.nodes) return { nodes: [], links: [] };
     const positionedNodes = result.nodes.map((node, index) => ({
@@ -61,62 +54,6 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
 
     return { nodes: positionedNodes, links: graphLinks };
   }, [result]);
-
-  const cleanupAudio = useCallback(() => {
-    sourceNodeRef.current?.stop();
-    sourceNodeRef.current = null;
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close();
-    }
-    audioContextRef.current = null;
-    setIsSpeaking(false);
-  }, []);
-
-  const handleSpeak = async (text: string) => {
-    if (isSpeaking) {
-      cleanupAudio();
-      return;
-    }
-
-    setIsSpeaking(true);
-    try {
-      const response = await fetch('/api/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error('Failed to get audio stream');
-      }
-
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
-      audioContextRef.current = newAudioContext;
-
-      const pcmPlayer = new PCMPlayer(newAudioContext);
-      pcmPlayer.feed(response.body);
-      pcmPlayer.on('ended', cleanupAudio);
-      pcmPlayer.on('error', (error) => {
-        console.error("Playback error:", error);
-        toast({
-          title: "Audio Playback Error",
-          description: "Could not play the generated audio.",
-          variant: "destructive",
-        });
-        cleanupAudio();
-      });
-      sourceNodeRef.current = pcmPlayer.getSourceNode();
-    } catch (error) {
-      console.error("Failed to generate speech:", error);
-      toast({
-        title: "Speech Generation Failed",
-        description: "Could not generate audio for the summary.",
-        variant: "destructive",
-      });
-      setIsSpeaking(false);
-    }
-  };
-
 
   if (isLoading) {
     return <SourceGraphCardSkeleton />;
@@ -230,20 +167,6 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                 <h3 className="font-semibold text-lg text-primary mb-2">Spread Summary</h3>
                 <p className="text-foreground/90">{summary}</p>
             </div>
-            {summary && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => handleSpeak(summary)}
-                aria-label={isSpeaking ? "Stop speaking" : "Speak summary"}
-              >
-                {isSpeaking ? (
-                  sourceNodeRef.current ? <Square /> : <Loader className="animate-spin" />
-                ) : (
-                  <Volume2 />
-                )}
-              </Button>
-            )}
         </div>
         <Separator />
 
@@ -315,89 +238,6 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   );
 }
 
-class PCMPlayer {
-    private audioCtx: AudioContext;
-    private source: AudioBufferSourceNode | null = null;
-    private eventHandlers: { [key: string]: ((...args: any[]) => void)[] } = {};
-    private audioQueue: AudioBuffer[] = [];
-    private isPlaying = false;
-    private sampleRate: number;
-
-    constructor(audioCtx: AudioContext) {
-        this.audioCtx = audioCtx;
-        this.sampleRate = audioCtx.sampleRate;
-    }
-
-    async feed(stream: ReadableStream<Uint8Array>) {
-        const reader = stream.getReader();
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const pcmChunk = new Int16Array(value.buffer, value.byteOffset, value.length / 2);
-                const float32Chunk = new Float32Array(pcmChunk.length);
-                for (let i = 0; i < pcmChunk.length; i++) {
-                    float32Chunk[i] = pcmChunk[i] / 32768.0;
-                }
-                
-                if (this.audioCtx.state === 'closed') return;
-
-                const audioBuffer = this.audioCtx.createBuffer(1, float32Chunk.length, this.sampleRate);
-                audioBuffer.getChannelData(0).set(float32Chunk);
-
-                this.audioQueue.push(audioBuffer);
-                if (!this.isPlaying) {
-                    this.playQueue();
-                }
-            }
-        } catch (error) {
-            this.emit('error', error);
-        }
-    }
-
-    playQueue() {
-        if (this.audioQueue.length === 0 || this.isPlaying || this.audioCtx.state === 'closed') {
-            if (this.audioQueue.length === 0 && !this.isPlaying) {
-                this.emit('ended');
-            }
-            return;
-        }
-
-        this.isPlaying = true;
-        const buffer = this.audioQueue.shift()!;
-        this.source = this.audioCtx.createBufferSource();
-        this.source.buffer = buffer;
-        this.source.connect(this.audioCtx.destination);
-        
-        this.source.onended = () => {
-            this.isPlaying = false;
-            this.playQueue();
-        };
-
-        this.source.start();
-    }
-
-    on(event: string, handler: (...args: any[]) => void) {
-        if (!this.eventHandlers[event]) {
-            this.eventHandlers[event] = [];
-        }
-        this.eventHandlers[event].push(handler);
-    }
-
-    emit(event: string, ...args: any[]) {
-        if (this.eventHandlers[event]) {
-            this.eventHandlers[event].forEach(handler => handler(...args));
-        }
-    }
-
-    getSourceNode() {
-      return this.source;
-    }
-}
-
-
 function SourceGraphCardSkeleton() {
   return (
     <Card className="shadow-lg">
@@ -437,5 +277,3 @@ function SourceGraphCardSkeleton() {
     </Card>
   );
 }
-
-    
