@@ -39,8 +39,6 @@ export const streamTextToSpeech = ai.defineFlow(
       stream: true,
     });
     
-    // This is now returning a standard ReadableStream from the AI SDK
-    // which the action can pipe to the client.
     return stream;
   }
 );

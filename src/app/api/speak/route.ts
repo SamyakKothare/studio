@@ -1,5 +1,5 @@
 // src/app/api/speak/route.ts
-import { speakTextStream } from '@/app/actions';
+import { streamTextToSpeech } from '@/ai/flows/stream-text-to-speech';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -9,10 +9,24 @@ export async function POST(req: NextRequest) {
       return new NextResponse('Text is required', { status: 400 });
     }
 
-    const audioStream = await speakTextStream(text);
-    
-    // Return the stream directly
-    return new NextResponse(audioStream, {
+    const flowStream = await streamTextToSpeech({ text });
+
+    if (!flowStream) {
+        throw new Error('The streaming flow did not return a valid stream.');
+    }
+
+    const readableStream = new ReadableStream({
+        async start(controller) {
+            for await (const chunk of flowStream) {
+                if (chunk?.output?.custom?.chunk) {
+                    controller.enqueue(chunk.output.custom.chunk);
+                }
+            }
+            controller.close();
+        }
+    });
+
+    return new NextResponse(readableStream, {
         headers: {
             'Content-Type': 'audio/pcm',
         },
