@@ -14,6 +14,7 @@ import {
   ChevronDown,
   BrainCircuit,
   Share2,
+  ShieldQuestion,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -51,7 +52,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
-import { checkFact, checkImageFact, analyzeFallacies, traceSource } from "./actions";
+import { checkFact, checkImageFact, analyzeFallacies, traceSource, checkForScam } from "./actions";
 import { Logo } from "@/components/logo";
 import { VerdictCard } from "@/components/verdict-card";
 import { Welcome } from "@/components/welcome";
@@ -64,6 +65,8 @@ import type { AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-
 import { FallacyAnalysisCard } from "@/components/fallacy-analysis-card";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { SourceGraphCard } from "@/components/source-graph-card";
+import type { AnalyzeTextForScamOutput } from "@/ai/flows/analyze-text-for-scam";
+import { ScamAnalysisCard } from "@/components/scam-analysis-card";
 
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
@@ -81,9 +84,14 @@ type SourceTraceResult = TraceMisinformationSourceOutput & {
   query: string;
 }
 
-type Result = FactCheckResult | FallacyAnalysisResult | SourceTraceResult;
+type ScamAnalysisResult = AnalyzeTextForScamOutput & {
+  type: "scam-analysis";
+  query: string;
+}
 
-type InputMode = "text" | "image" | "voice" | "analyze" | "trace";
+type Result = FactCheckResult | FallacyAnalysisResult | SourceTraceResult | ScamAnalysisResult;
+
+type InputMode = "text" | "image" | "voice" | "analyze" | "trace" | "scam";
 
 const trustedSources = [
   { name: "Wikipedia", icon: <BookCheck />, url: "https://www.wikipedia.org/" },
@@ -208,12 +216,42 @@ export default function Home() {
    })
  }
 
+ const handleScamCheck = (query: string) => {
+  if (!query.trim()) {
+   toast({
+     title: "Input required",
+     description: "Please enter text to check for scams.",
+     variant: "destructive",
+   });
+   return;
+ }
+ setResult(null);
+ startTransition(async () => {
+   try {
+     const response = await checkForScam(query);
+     if(response) {
+       const newResult: ScamAnalysisResult = { ...response, query, type: 'scam-analysis' };
+       setResult(newResult);
+     }
+   } catch (error) {
+     console.error("Scam check failed:", error);
+     toast({
+       title: "Error",
+       description: "Failed to get scam analysis result. Please try again.",
+       variant: "destructive",
+     });
+   }
+ })
+}
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMode === 'analyze') {
       handleFallacyCheck(text);
     } else if (inputMode === 'trace') {
       handleSourceTrace(text);
+    } else if (inputMode === 'scam') {
+      handleScamCheck(text);
     }
     else {
       handleFactCheck(text);
@@ -260,6 +298,9 @@ export default function Home() {
        if (inputMode === 'trace') {
         return <SourceGraphCard isLoading={true} />
       }
+      if (inputMode === 'scam') {
+        return <ScamAnalysisCard isLoading={true} />
+      }
        return <VerdictCard isLoading={true} />
     }
     if (!result) {
@@ -275,7 +316,25 @@ export default function Home() {
     if (result.type === 'source-trace') {
       return <SourceGraphCard result={result} />
     }
+    if (result.type === 'scam-analysis') {
+      return <ScamAnalysisCard result={result} />
+    }
     return <Welcome />;
+  }
+
+  const getInputPlaceHolder = () => {
+    switch (inputMode) {
+      case 'text':
+        return "Enter a statement, claim, or question to fact-check...";
+      case 'analyze':
+        return "Enter a paragraph or argument to analyze for logical fallacies...";
+      case 'trace':
+        return "Enter a claim to trace its origin and spread...";
+      case 'scam':
+        return "Paste an email, text message, or other text to check for scam tactics...";
+      default:
+        return "";
+    }
   }
 
   return (
@@ -428,18 +487,23 @@ export default function Home() {
                     >
                       <Share2/>Trace Source
                     </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className={cn(inputMode === 'scam' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
+                      variant={inputMode === 'scam' ? "secondary" : "ghost"}
+                      onClick={() => setInputMode('scam')}
+                    >
+                      <ShieldQuestion/>Scam Detector
+                    </Button>
                 </div>
                 
-                {(inputMode === 'text' || inputMode === 'trace' || inputMode === 'analyze') && (
+                {(inputMode === 'text' || inputMode === 'trace' || inputMode === 'analyze' || inputMode === 'scam') && (
                   <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <Textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
-                      placeholder={
-                        inputMode === 'text' ? "Enter a statement, claim, or question to fact-check..." :
-                        inputMode === 'analyze' ? "Enter a paragraph or argument to analyze for logical fallacies..." :
-                        "Enter a claim to trace its origin and spread..."
-                      }
+                      placeholder={getInputPlaceHolder()}
                       className="min-h-[120px] text-base"
                       disabled={isPending}
                     />
@@ -447,10 +511,12 @@ export default function Home() {
                       {inputMode === 'text' && <Sparkles className="mr-2" />}
                       {inputMode === 'analyze' && <BrainCircuit className="mr-2" />}
                       {inputMode === 'trace' && <Share2 className="mr-2" />}
+                      {inputMode === 'scam' && <ShieldQuestion className="mr-2" />}
                       {isPending ? "Analyzing..." : 
                         inputMode === 'text' ? "Fact Check" :
                         inputMode === 'analyze' ? "Analyze for Fallacies" :
-                        "Trace Source"
+                        inputMode === 'trace' ? "Trace Source" :
+                        "Check for Scam"
                       }
                     </Button>
                   </form>

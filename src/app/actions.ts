@@ -4,6 +4,7 @@ import { generateFactCheckVerdict, type GenerateFactCheckVerdictOutput } from "@
 import { factCheckImageAndText, type FactCheckImageAndTextInput, type FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
 import { analyzeTextForFallacies, type AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
 import { traceMisinformationSource, type TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
+import { analyzeTextForScam, type AnalyzeTextForScamOutput } from "@/ai/flows/analyze-text-for-scam";
 
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
@@ -63,3 +64,17 @@ export async function traceSource(claim: string): Promise<TraceMisinformationSou
       throw new Error("Failed to get a source trace from the AI model.");
     }
   }
+
+export async function checkForScam(text: string): Promise<AnalyzeTextForScamOutput | null> {
+  if (!text) {
+    throw new Error("Input text is required for scam analysis.");
+  }
+
+  try {
+    const result = await analyzeTextForScam({ text });
+    return result;
+  } catch (error) {
+    console.error("Error in analyzeTextForScam flow:", error);
+    throw new Error("Failed to get a scam analysis from the AI model.");
+  }
+}
