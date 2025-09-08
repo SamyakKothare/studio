@@ -17,7 +17,7 @@ export type AnalyzeTextForScamInput = z.infer<typeof AnalyzeTextForScamInputSche
 
 
 const TacticSchema = z.object({
-    tactic: z.string().describe('The name of the scam tactic detected (e.g., "Urgent Call to Action", "Suspicious Link", "Grammatical Errors", "Request for Personal Information", "Too-Good-To-Be-True Offer").'),
+    tactic: z.string().describe('The name of the scam tactic detected (e.g., "Urgent Call to Action", "Suspicious Link", "Grammatical Errors", "Request for Personal Information", "Too-Good-To-Be-True Offer", "Impersonation").'),
     explanation: z.string().describe('A brief explanation of why this part of the text is a red flag.'),
     excerpt: z.string().describe('The specific quote from the text where the tactic appears.'),
 });
