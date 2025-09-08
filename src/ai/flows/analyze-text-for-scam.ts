@@ -43,17 +43,17 @@ Text to Analyze:
 {{{text}}}
 
 1.  **Analyze the Text**: Carefully read the text and look for common scam tactics, including but not limited to:
-    *   **Urgent Call to Action**: Language that creates a sense of panic or demands immediate action (e.g., "your account will be suspended," "act now").
+    *   **Urgent Call to Action**: Language that creates a sense of panic or demands immediate action.
     *   **Suspicious Links**: URLs that seem unusual, are shortened, or don't match the supposed sender.
     *   **Grammatical Errors**: Poor spelling, grammar, or awkward phrasing.
     *   **Request for Personal Information**: Asking for passwords, social security numbers, credit card details, etc.
     *   **Too-Good-To-Be-True Offer**: Promises of free money, lottery wins, or unrealistic discounts.
-    *   **Impersonation**: Pretending to be a legitimate organization like a bank, government agency, or well-known company.
+    *   **Impersonation**: Pretending to be a legitimate organization.
 
-2.  **Determine Risk Level**: Based on the number and severity of the tactics found, assess an overall \`riskLevel\`.
-    *   **High Risk**: Clear and multiple signs of a scam. Definitely malicious.
-    *   **Medium Risk**: Contains suspicious elements but might not be a definite scam. Warrants extreme caution.
-    *   **Likely Safe**: Appears to be a legitimate communication.
+2.  **Determine Risk Level**: Based on the tactics found, assess an overall \`riskLevel\`. Be discerning.
+    *   **High Risk**: Use this for messages with clear, malicious intent. It MUST contain obvious red flags like direct requests for passwords or financial info, or clear impersonations of official entities like banks or government agencies combined with threats.
+    *   **Medium Risk**: Use this for messages that are highly suspicious but lack definitive proof of malice. This includes aggressive marketing with high-pressure tactics, vague senders, and suspicious (e.g., shortened) links, but NO direct requests for passwords or credentials. The primary goal seems to be generating clicks through manipulative means.
+    *   **Likely Safe**: Appears to be a legitimate communication with no significant red flags.
 
 3.  **Write a Summary**: Provide a brief, one-sentence summary of your findings and a clear recommendation (e.g., "This appears to be a dangerous phishing attempt and you should delete it immediately.").
 
