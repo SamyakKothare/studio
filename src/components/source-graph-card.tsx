@@ -147,7 +147,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   );
 
   return (
-    <Card className="shadow-lg animate-in fade-in-50">
+    <Card className="shadow-lg animate-in fade-in-50 border-t-4 border-primary">
       <CardHeader>
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">

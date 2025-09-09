@@ -31,7 +31,7 @@ export function FallacyAnalysisCard({ result, isLoading = false }: FallacyAnalys
   const { fallacies, query } = result;
 
   return (
-    <Card className="shadow-lg animate-in fade-in-50">
+    <Card className="shadow-lg animate-in fade-in-50 border-t-4 border-primary">
       <CardHeader>
         <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">

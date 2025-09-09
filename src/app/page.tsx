@@ -434,19 +434,22 @@ export default function Home() {
           </DropdownMenu>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6 bg-secondary/30">
           <div className="mx-auto max-w-4xl space-y-8">
-            <Card>
+            <Card className="shadow-lg border-primary/20">
               <CardHeader>
-                <CardTitle>Submit a Claim for Verification</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="text-primary"/>
+                  Submit a Claim for Verification
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-1 bg-muted rounded-lg flex gap-1 w-fit flex-wrap">
                   <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'text' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                      variant={inputMode === 'text' ? "secondary" : "ghost"}
+                      className={cn(inputMode === 'text' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      variant="ghost"
                       onClick={() => setInputMode('text')}
                     >
                       <MessageSquare/>Fact-Check
@@ -454,8 +457,8 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'image' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                      variant={inputMode === 'image' ? "secondary" : "ghost"}
+                      className={cn(inputMode === 'image' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      variant="ghost"
                       onClick={() => setInputMode('image')}
                     >
                       <ImageIcon/>Image
@@ -463,8 +466,8 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'voice' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                      variant={inputMode === 'voice' ? "secondary" : "ghost"}
+                      className={cn(inputMode === 'voice' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      variant="ghost"
                       onClick={() => setInputMode('voice')}
                     >
                       <Mic/>Voice
@@ -472,8 +475,8 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'analyze' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                      variant={inputMode === 'analyze' ? "secondary" : "ghost"}
+                      className={cn(inputMode === 'analyze' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      variant="ghost"
                       onClick={() => setInputMode('analyze')}
                     >
                       <BrainCircuit/>Analyze
@@ -481,8 +484,8 @@ export default function Home() {
                      <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'trace' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                      variant={inputMode === 'trace' ? "secondary" : "ghost"}
+                      className={cn(inputMode === 'trace' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      variant="ghost"
                       onClick={() => setInputMode('trace')}
                     >
                       <Share2/>Trace Source
@@ -490,8 +493,8 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'scam' && "bg-background shadow-sm text-foreground hover:bg-background/80")}
-                      variant={inputMode === 'scam' ? "secondary" : "ghost"}
+                      className={cn(inputMode === 'scam' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      variant="ghost"
                       onClick={() => setInputMode('scam')}
                     >
                       <ShieldQuestion/>Scam Detector
@@ -507,7 +510,7 @@ export default function Home() {
                       className="min-h-[120px] text-base"
                       disabled={isPending}
                     />
-                     <Button type="submit" className="self-start" disabled={isPending || !text.trim()}>
+                     <Button type="submit" size="lg" className="self-start" disabled={isPending || !text.trim()}>
                       {inputMode === 'text' && <Sparkles className="mr-2" />}
                       {inputMode === 'analyze' && <BrainCircuit className="mr-2" />}
                       {inputMode === 'trace' && <Share2 className="mr-2" />}

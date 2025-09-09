@@ -71,7 +71,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
   };
 
   return (
-    <Card className="shadow-lg animate-in fade-in-50">
+    <Card className="shadow-lg animate-in fade-in-50 border-t-4" style={{borderTopColor: isTrue ? 'hsl(var(--accent))' : 'hsl(var(--destructive))'}}>
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>

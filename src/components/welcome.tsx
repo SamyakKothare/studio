@@ -1,50 +1,48 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, FileText, Camera, Mic } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, FileText, Camera, Mic, BrainCircuit, Share2, ShieldQuestion } from "lucide-react";
 
 export function Welcome() {
   return (
     <Card className="border-dashed animate-in fade-in-50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <Sparkles className="text-primary size-7" />
-          <span className="text-2xl font-headline">
-            Welcome to FACT CHECKER-AI
-          </span>
-        </CardTitle>
+        <div className="text-center">
+            <Sparkles className="text-primary size-10 mx-auto mb-4" />
+            <CardTitle className="text-3xl font-bold">
+                Welcome to FACT CHECKER-AI
+            </CardTitle>
+             <CardDescription className="text-lg mt-2 text-muted-foreground">
+                Your intelligent assistant for navigating the complex information landscape.
+            </CardDescription>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <p className="text-muted-foreground">
-          Your intelligent assistant for verifying information. Get started by
-          entering a statement, claim, or question in the text box above.
+      <CardContent className="space-y-8">
+        <p className="text-center text-muted-foreground max-w-2xl mx-auto">
+          Get started by selecting a tool above and providing a claim, image, or text. Our AI will analyze your query and provide a comprehensive, evidence-based report.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-          <div className="p-4 bg-background rounded-lg">
-            <FileText className="mx-auto mb-2 size-8 text-accent" />
-            <h3 className="font-semibold">Text Analysis</h3>
-            <p className="text-sm text-muted-foreground">
-              Paste any text to check its validity.
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 bg-card rounded-lg border flex flex-col items-center text-center">
+            <FileText className="mb-3 size-9 text-accent" />
+            <h3 className="font-semibold text-lg">Fact-Check Text</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Verify statements, claims, and questions against trusted sources.
             </p>
           </div>
-          <div className="p-4 bg-background rounded-lg">
-            <Camera className="mx-auto mb-2 size-8 text-accent" />
-            <h3 className="font-semibold">Image Verification</h3>
-            <p className="text-sm text-muted-foreground">
-              Upload an image to check its origin.
+          <div className="p-6 bg-card rounded-lg border flex flex-col items-center text-center">
+            <BrainCircuit className="mb-3 size-9 text-accent" />
+            <h3 className="font-semibold text-lg">Analyze Rhetoric</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Detect logical fallacies in arguments, articles, or speeches.
             </p>
           </div>
-          <div className="p-4 bg-background rounded-lg">
-            <Mic className="mx-auto mb-2 size-8 text-accent" />
-            <h3 className="font-semibold">Voice Transcription</h3>
-            <p className="text-sm text-muted-foreground">
-              Speak your query and get it fact-checked.
+           <div className="p-6 bg-card rounded-lg border flex flex-col items-center text-center">
+            <ShieldQuestion className="mb-3 size-9 text-accent" />
+            <h3 className="font-semibold text-lg">Detect Scams</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+             Analyze emails and messages for common scam tactics.
             </p>
           </div>
         </div>
-        <p className="text-center text-sm text-muted-foreground pt-4">
-          Our AI cross-references multiple trusted sources to provide a
-          confidence score and a clear verdict.
-        </p>
       </CardContent>
     </Card>
   );
