@@ -22,11 +22,12 @@ import {
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
 import type { FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
-import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert, Sparkles, Brain, Lightbulb, User } from "lucide-react";
+import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert, Sparkles, Lightbulb, User, Bot } from "lucide-react";
 import { Button } from "./ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { SimplifyForKidsOutput } from "@/ai/flows/simplify-for-kids";
 import { getSimplifiedExplanation } from "@/app/actions";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
   query: string;
@@ -63,6 +64,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
       });
       return;
     }
+    setSimplified(null);
     startSimplifyingTransition(async () => {
       try {
         const response = await getSimplifiedExplanation(explanation);
@@ -105,7 +107,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
   };
 
   return (
-    <Card className="shadow-lg animate-in fade-in-50 border-t-4 border-primary/20" >
+    <Card className="shadow-lg animate-in fade-in-50" >
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -238,31 +240,50 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
                 </div>
                 <AccordionContent className="text-base text-foreground/90 pt-2 space-y-4">
                   <p>{explanation}</p>
+                  
                    {isSimplifying && (
                     <div className="space-y-4 pt-4">
-                      <Skeleton className="h-6 w-1/3" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-4/5" />
-                       <Skeleton className="h-6 w-1/4 mt-4" />
-                       <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
+                      <div className="flex items-start gap-4">
+                        <Avatar>
+                          <AvatarFallback><Bot/></AvatarFallback>
+                        </Avatar>
+                        <div className="w-full space-y-2">
+                          <Skeleton className="h-4 w-1/4" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-4/5" />
+                        </div>
+                      </div>
+                      <div className="pl-14 space-y-2">
+                         <Skeleton className="h-4 w-1/3" />
+                         <Skeleton className="h-4 w-full" />
+                         <Skeleton className="h-4 w-3/4" />
+                      </div>
                     </div>
                   )}
+
                   {simplified && (
-                    <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg mt-4 space-y-4 text-yellow-900 animate-in fade-in-50">
-                      <h4 className="font-bold text-lg flex items-center gap-2">
-                        <User className="size-5 text-yellow-500" />
-                        Explorer Explains...
-                      </h4>
-                      <p className="text-base">{simplified.simplifiedExplanation}</p>
-                      
-                      <div className="p-3 bg-white/70 rounded-md">
-                        <h5 className="font-semibold flex items-center gap-2">
-                          <Lightbulb className="size-5 text-yellow-500"/>
-                          Here's a simpler way to think about it:
-                        </h5>
-                        <p className="mt-1 italic">"{simplified.analogy}"</p>
-                      </div>
+                    <div className="animate-in fade-in-50 mt-4 p-4 space-y-4 rounded-xl bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 border-l-4 border-amber-400">
+                       <div className="flex items-start gap-3">
+                          <Avatar className="border-2 border-amber-200">
+                             <AvatarFallback className="bg-amber-100 text-amber-600">
+                                <Bot />
+                             </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-semibold text-amber-900">Explorer Explains...</h4>
+                            <p className="text-amber-900/90">{simplified.simplifiedExplanation}</p>
+                          </div>
+                       </div>
+                       
+                        <div className="pl-14">
+                          <div className="p-3 bg-white/60 rounded-lg space-y-1">
+                            <h5 className="font-semibold flex items-center gap-2 text-amber-900">
+                              <Lightbulb className="size-5 text-amber-500"/>
+                              Here's an analogy:
+                            </h5>
+                            <p className="mt-1 italic text-amber-900/80">"{simplified.analogy}"</p>
+                          </div>
+                       </div>
                     </div>
                   )}
                 </AccordionContent>
@@ -271,9 +292,8 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
           )}
 
       </CardContent>
-      <CardFooter className="flex-col items-start gap-4">
-        <Separator />
-        <h3 className="font-medium">Sources</h3>
+      <CardFooter className="flex-col items-start gap-4 pt-4">
+        <h3 className="font-medium text-lg">Sources</h3>
         <div className="space-y-4 w-full">
           {sources.map((source, index) => (
              <div key={index} className="flex flex-col gap-1">
@@ -282,10 +302,10 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
                     href={source.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground flex items-center gap-2 hover:text-primary hover:underline"
+                    className="text-sm text-primary/80 flex items-center gap-2 hover:text-primary hover:underline"
                 >
                     <LinkIcon className="h-4 w-4 shrink-0" />
-                    <p className="truncate font-medium text-foreground">{source.url}</p>
+                    <p className="truncate font-medium">{source.url}</p>
                     <ExternalLink className="h-4 w-4 shrink-0" />
                 </a>
                 ) : (
@@ -353,7 +373,7 @@ function VerdictCardSkeleton() {
       </CardContent>
       <CardFooter className="flex-col items-start gap-4">
         <Separator />
-        <Skeleton className="h-6 w-24 mb-2" />
+        <h3 className="font-medium text-lg">Sources</h3>
         <div className="space-y-4 w-full">
             <div className="space-y-2">
                 <Skeleton className="h-5 w-full" />
