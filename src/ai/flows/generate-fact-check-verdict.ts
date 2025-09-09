@@ -20,9 +20,9 @@ const GenerateFactCheckVerdictOutputSchema = z.object({
   confidenceScore: z.number().min(0).max(100).describe('The confidence score of the verdict (0-100%).'),
   confidenceReasoning: z.string().describe('A brief explanation for the confidence score.'),
   sources: z.array(z.object({
-    url: z.string().url().or(z.string()).describe('The URL of the source.'),
+    url: z.string().describe('The URL of the source, or a Google Search query if a stable URL is not available (e.g., "Google Search: History of the Eiffel Tower").'),
     summary: z.string().describe('A brief summary of why this source is relevant to the fact-check.'),
-  })).describe('A list of valid URL sources used in the verification process, along with summaries.'),
+  })).describe('A list of sources used in the verification process. These should be stable, high-level URLs or Google Search queries.'),
   when: z.string().optional().describe('When the statement is true.'),
   where: z.string().optional().describe('Where the statement is true.'),
   explanation: z.string().describe('A brief, neutral explanation of the broader topic for context.'),
@@ -41,16 +41,16 @@ const generateFactCheckVerdictPrompt = ai.definePrompt({
 
 Statement: {{{text}}}
 
-1.  Research the statement using reliable sources such as wikipedia, government websites, NASA, ISRO, and google search.
-2.  Aggregate information from multiple sources to improve accuracy and confidence.
-3.  Determine a verdict (TRUE or FAKE) based on your research.
-4.  Calculate a confidence score (0-100%) representing the reliability of the verdict based on source agreement and credibility.
-5.  Provide a brief reasoning for the confidence score.
-6.  If the statement is true, extract "when" and "where" from it.
-7.  Provide a list of valid URL sources used in the verification process. For each source, provide a brief summary of its relevance.
+1.  Research the statement using reliable sources.
+2.  For sources, prioritize providing stable, high-level URLs (e.g., main article pages from Wikipedia, NASA, major news outlets). Avoid deep links to specific, obscure pages that are likely to break.
+3.  **If you cannot find a stable, reliable URL for a piece of information, you MUST provide a Google Search query instead.** Format it as: "Google Search: [your search query]". For example: "Google Search: evidence of water on Mars".
+4.  Determine a verdict (TRUE or FAKE) based on your research.
+5.  Calculate a confidence score (0-100%) representing the reliability of the verdict.
+6.  Provide a brief reasoning for the confidence score.
+7.  If the statement is true, extract "when" and "where" from it.
 8.  Provide a brief, neutral explanation of the broader topic for context.
 
-Output the verdict, confidence score, confidence reasoning, sources with summaries, when, where, and the explanation in JSON format.
+Output a single JSON object with the verdict, confidence score, confidence reasoning, sources (as URLs or Search Queries), when, where, and the explanation.
 `,
 });
 

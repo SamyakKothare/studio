@@ -22,12 +22,12 @@ import {
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
 import type { FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
-import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert, Sparkles, Lightbulb, User, Bot } from "lucide-react";
+import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert, Sparkles, Lightbulb, Bot, Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { SimplifyForKidsOutput } from "@/ai/flows/simplify-for-kids";
 import { getSimplifiedExplanation } from "@/app/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
   query: string;
@@ -97,28 +97,49 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
       : "bg-red-500"
     : "";
 
-  const isValidUrl = (urlString: string) => {
+  const renderSource = (source: { url: string; summary: string; }) => {
+    const isSearchQuery = source.url.startsWith("Google Search:");
+    const query = source.url.replace("Google Search:", "").trim();
+
+    if (isSearchQuery) {
+      return {
+        href: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+        icon: <Search className="h-4 w-4 shrink-0" />,
+        displayUrl: source.url,
+      };
+    }
+
     try {
-      new URL(urlString);
-      return true;
+      new URL(source.url); // Check if it's a valid URL
+      return {
+        href: source.url,
+        icon: <LinkIcon className="h-4 w-4 shrink-0" />,
+        displayUrl: source.url,
+      };
     } catch (e) {
-      return false;
+      // If not a valid URL and not a search query, treat as plain text
+      return {
+        href: `https://www.google.com/search?q=${encodeURIComponent(source.url)}`,
+        icon: <Search className="h-4 w-4 shrink-0" />,
+        displayUrl: `Search: ${source.url}`,
+        isInvalidUrl: true,
+      };
     }
   };
 
   return (
-    <Card className="shadow-lg animate-in fade-in-50" >
+    <Card className="shadow-lg animate-in fade-in-50 border-t-4 border-primary" >
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-xl">Verdict</CardTitle>
-            <CardDescription className="pt-1">
+            <CardTitle className="text-xl font-bold tracking-tight">Verdict</CardTitle>
+            <CardDescription className="pt-1 max-w-xl">
               Result for: "{query}"
             </CardDescription>
           </div>
           <Badge
             className={cn(
-              "text-lg",
+              "text-lg font-bold py-1 px-4",
               isTrue
                 ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800"
                 : "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-200 dark:border-red-800"
@@ -135,9 +156,9 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="font-medium mb-2">Confidence Score</h3>
+          <h3 className="font-semibold text-base mb-2">Confidence Score</h3>
           <div className="flex items-center gap-4">
-            <Progress value={confidenceScore} className={cn("h-3", confidenceColor)} />
+            <Progress value={confidenceScore} className={cn("h-2.5", confidenceColor)} />
             <span className="font-semibold text-lg text-foreground/80">
               {confidenceScore}%
             </span>
@@ -152,16 +173,17 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
         {manipulationAnalysis && (
           <div>
              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-medium flex items-center gap-2">
+                <h3 className="font-semibold text-base flex items-center gap-2">
                   <ScanSearch className="size-5 text-primary" />
                   Image Manipulation Analysis
                 </h3>
                  <Badge
                     variant="outline"
                     className={cn(
+                      "font-semibold",
                       manipulationAnalysis.isManipulated
-                        ? "border-amber-500 text-amber-600"
-                        : "border-green-500 text-green-600"
+                        ? "border-amber-500/50 text-amber-600 bg-amber-50"
+                        : "border-green-500/50 text-green-600 bg-green-50"
                     )}
                   >
                     {manipulationAnalysis.isManipulated ? (
@@ -173,7 +195,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
                   </Badge>
             </div>
             <div className="flex items-center gap-4">
-              <Progress value={manipulationAnalysis.manipulationConfidence} className={cn("h-3", manipulationConfidenceColor)} />
+              <Progress value={manipulationAnalysis.manipulationConfidence} className={cn("h-2.5", manipulationConfidenceColor)} />
               <span className="font-semibold text-lg text-foreground/80">
                 {manipulationAnalysis.manipulationConfidence}%
               </span>
@@ -186,30 +208,26 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
 
         {(when || where) && <Separator />}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {when && (
-            <div>
-              <h3 className="font-medium mb-2 text-primary">When</h3>
+            <div className="flex items-start gap-3">
+              <h3 className="font-semibold text-base text-primary whitespace-nowrap">When:</h3>
               <p className="text-foreground/90">{when}</p>
             </div>
           )}
           {where && (
-            <div>
-              <h3 className="font-medium mb-2 text-primary flex items-center gap-2">
-                Where 
-                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`} target="_blank" rel="noopener noreferrer" className="text-primary/70 hover:text-primary">
-                    <MapPin className="size-4" />
+             <div className="flex items-start gap-3">
+               <h3 className="font-semibold text-base text-primary whitespace-nowrap">Where:</h3>
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-foreground/90 hover:underline flex items-center gap-1.5"
+                >
+                  {where}
+                  <MapPin className="size-4 text-primary/70" />
                 </a>
-              </h3>
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-foreground/90 hover:underline"
-              >
-                {where}
-              </a>
-            </div>
+             </div>
           )}
         </div>
 
@@ -220,8 +238,8 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
                <AccordionItem value="item-1" className="border-b-0">
                 <div className="flex items-center w-full group">
                   <AccordionTrigger className="flex-1 hover:no-underline py-2">
-                    <span className="flex items-center gap-2 text-primary font-medium">
-                        <Info className="size-4" />
+                    <span className="flex items-center gap-2 text-primary font-semibold text-base">
+                        <Info className="size-5" />
                         Explain Further
                     </span>
                   </AccordionTrigger>
@@ -292,35 +310,31 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
           )}
 
       </CardContent>
-      <CardFooter className="flex-col items-start gap-4 pt-4">
-        <h3 className="font-medium text-lg">Sources</h3>
-        <div className="space-y-4 w-full">
-          {sources.map((source, index) => (
-             <div key={index} className="flex flex-col gap-1">
-                {isValidUrl(source.url) ? (
-                <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary/80 flex items-center gap-2 hover:text-primary hover:underline"
-                >
-                    <LinkIcon className="h-4 w-4 shrink-0" />
-                    <p className="truncate font-medium">{source.url}</p>
-                    <ExternalLink className="h-4 w-4 shrink-0" />
-                </a>
-                ) : (
-                <div
-                    className="text-sm text-muted-foreground flex items-center gap-2"
-                >
-                    <LinkIcon className="h-4 w-4 shrink-0" />
-                    <p className="truncate font-medium text-foreground">{source.url}</p>
+      {sources && sources.length > 0 && (
+         <CardFooter className="flex-col items-start gap-4 pt-4 bg-muted/40 pb-6 mt-4">
+            <h3 className="font-semibold text-lg">Sources</h3>
+            <div className="space-y-4 w-full">
+              {sources.map((source, index) => {
+                const { href, icon, displayUrl, isInvalidUrl } = renderSource(source);
+                return (
+                  <div key={index} className="flex flex-col gap-1">
+                    <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary/90 flex items-center gap-2 hover:text-primary hover:underline"
+                    >
+                        {icon}
+                        <p className={cn("truncate font-medium", isInvalidUrl && "text-destructive")}>{displayUrl}</p>
+                        <ExternalLink className="h-4 w-4 shrink-0" />
+                    </a>
+                    <p className="text-sm text-muted-foreground pl-6">{source.summary}</p>
                 </div>
-                )}
-                 <p className="text-sm text-muted-foreground pl-6">{source.summary}</p>
+                )
+              })}
             </div>
-          ))}
-        </div>
-      </CardFooter>
+          </CardFooter>
+      )}
     </Card>
   );
 }
@@ -334,23 +348,14 @@ function VerdictCardSkeleton() {
             <Skeleton className="h-7 w-32 mb-2" />
             <Skeleton className="h-5 w-64" />
           </div>
-          <Skeleton className="h-8 w-24 rounded-full" />
+          <Skeleton className="h-10 w-28 rounded-full" />
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
           <Skeleton className="h-5 w-40 mb-2" />
           <div className="flex items-center gap-4">
-            <Skeleton className="h-3 w-full" />
-            <Skeleton className="h-7 w-12" />
-          </div>
-          <Skeleton className="h-4 w-full mt-2" />
-        </div>
-        <Separator />
-        <div>
-          <Skeleton className="h-5 w-48 mb-2" />
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-2.5 w-full" />
             <Skeleton className="h-7 w-12" />
           </div>
           <Skeleton className="h-4 w-full mt-2" />
@@ -371,9 +376,8 @@ function VerdictCardSkeleton() {
             <Skeleton className="h-8 w-40" />
         </div>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-4">
-        <Separator />
-        <h3 className="font-medium text-lg">Sources</h3>
+      <CardFooter className="flex-col items-start gap-4 bg-muted/40 pb-6 mt-4">
+        <Skeleton className="h-6 w-32" />
         <div className="space-y-4 w-full">
             <div className="space-y-2">
                 <Skeleton className="h-5 w-full" />
