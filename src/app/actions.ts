@@ -5,6 +5,7 @@ import { factCheckImageAndText, type FactCheckImageAndTextInput, type FactCheckI
 import { analyzeTextForFallacies, type AnalyzeTextForFallaciesOutput } from "@/ai/flows/analyze-text-for-fallacies";
 import { traceMisinformationSource, type TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { analyzeTextForScam, type AnalyzeTextForScamOutput } from "@/ai/flows/analyze-text-for-scam";
+import { simplifyForKids, type SimplifyForKidsOutput } from "@/ai/flows/simplify-for-kids";
 
 
 export async function checkFact(text: string): Promise<GenerateFactCheckVerdictOutput | null> {
@@ -76,5 +77,18 @@ export async function checkForScam(text: string): Promise<AnalyzeTextForScamOutp
   } catch (error) {
     console.error("Error in analyzeTextForScam flow:", error);
     throw new Error("Failed to get a scam analysis from the AI model.");
+  }
+}
+
+export async function getSimplifiedExplanation(textToSimplify: string): Promise<SimplifyForKidsOutput | null> {
+  if (!textToSimplify) {
+    throw new Error("Input text is required for simplification.");
+  }
+  try {
+    const result = await simplifyForKids({ textToSimplify });
+    return result;
+  } catch (error) {
+    console.error("Error in simplifyForKids flow:", error);
+    throw new Error("Failed to get a simplified explanation from the AI model.");
   }
 }

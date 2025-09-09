@@ -9,3 +9,4 @@ import '@/ai/flows/fact-check-image-and-text.ts';
 import '@/ai/flows/analyze-text-for-fallacies.ts';
 import '@/ai/flows/trace-misinformation-source.ts';
 import '@/ai/flows/analyze-text-for-scam.ts';
+import '@/ai/flows/simplify-for-kids.ts';

@@ -1,6 +1,6 @@
 
 "use client";
-
+import React, { useState, useTransition } from "react";
 import {
   Card,
   CardContent,
@@ -22,7 +22,11 @@ import {
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
 import type { FactCheckImageAndTextOutput } from "@/ai/flows/fact-check-image-and-text";
-import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert } from "lucide-react";
+import { CheckCircle2, Link as LinkIcon, AlertCircle, Info, ExternalLink, MapPin, ScanSearch, Shield, ShieldAlert, Sparkles, Brain, Lightbulb, User } from "lucide-react";
+import { Button } from "./ui/button";
+import { useToast } from "@/hooks/use-toast";
+import type { SimplifyForKidsOutput } from "@/ai/flows/simplify-for-kids";
+import { getSimplifiedExplanation } from "@/app/actions";
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
   query: string;
@@ -34,6 +38,10 @@ interface VerdictCardProps {
 }
 
 export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
+  const [isSimplifying, startSimplifyingTransition] = useTransition();
+  const [simplified, setSimplified] = useState<SimplifyForKidsOutput | null>(null);
+  const { toast } = useToast();
+  
   if (isLoading) {
     return <VerdictCardSkeleton />;
   }
@@ -45,6 +53,32 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
   const { verdict, confidenceScore, confidenceReasoning, sources, when, where, query, explanation } = result;
   const manipulationAnalysis = 'manipulationAnalysis' in result ? result.manipulationAnalysis : null;
   const isTrue = verdict === "TRUE";
+
+  const handleSimplify = () => {
+    if (!explanation) {
+       toast({
+        title: "Nothing to simplify",
+        description: "This result doesn't have an explanation to simplify.",
+        variant: "destructive",
+      });
+      return;
+    }
+    startSimplifyingTransition(async () => {
+      try {
+        const response = await getSimplifiedExplanation(explanation);
+        if (response) {
+          setSimplified(response);
+        }
+      } catch (error) {
+        console.error("Simplification failed:", error);
+        toast({
+          title: "Simplification Error",
+          description: "Could not get a simplified explanation. Please try again.",
+          variant: "destructive",
+        });
+      }
+    });
+  }
 
   const confidenceColor =
     confidenceScore > 75
@@ -71,7 +105,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
   };
 
   return (
-    <Card className="shadow-lg animate-in fade-in-50 border-t-4" style={{borderTopColor: isTrue ? 'hsl(var(--accent))' : 'hsl(var(--destructive))'}}>
+    <Card className="shadow-lg animate-in fade-in-50 border-t-4 border-primary/20" >
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -189,9 +223,48 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
                         Explain Further
                     </span>
                   </AccordionTrigger>
+                   {explanation && (
+                     <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSimplify}
+                        disabled={isSimplifying}
+                        className="ml-4"
+                      >
+                        <Sparkles className="mr-2 text-yellow-400" />
+                        {isSimplifying ? "Thinking..." : "Truth Explorer"}
+                      </Button>
+                    )}
                 </div>
-                <AccordionContent className="text-base text-foreground/90 pt-2">
-                  {explanation}
+                <AccordionContent className="text-base text-foreground/90 pt-2 space-y-4">
+                  <p>{explanation}</p>
+                   {isSimplifying && (
+                    <div className="space-y-4 pt-4">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-4/5" />
+                       <Skeleton className="h-6 w-1/4 mt-4" />
+                       <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  )}
+                  {simplified && (
+                    <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg mt-4 space-y-4 text-yellow-900 animate-in fade-in-50">
+                      <h4 className="font-bold text-lg flex items-center gap-2">
+                        <User className="size-5 text-yellow-500" />
+                        Explorer Explains...
+                      </h4>
+                      <p className="text-base">{simplified.simplifiedExplanation}</p>
+                      
+                      <div className="p-3 bg-white/70 rounded-md">
+                        <h5 className="font-semibold flex items-center gap-2">
+                          <Lightbulb className="size-5 text-yellow-500"/>
+                          Here's a simpler way to think about it:
+                        </h5>
+                        <p className="mt-1 italic">"{simplified.analogy}"</p>
+                      </div>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
