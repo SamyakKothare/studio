@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useTransition } from "react";
@@ -104,7 +105,7 @@ export default function Home() {
   const [isPending, startTransition] = useTransition();
   const [text, setText] = useState("");
   const [result, setResult] = useState<Result | null>(null);
-  const [history, setHistory] = useState<FactCheckResult[]>([]);
+  const [history, setHistory] = useState<Result[]>([]);
   const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("text");
   const { toast } = useToast();
@@ -176,6 +177,7 @@ export default function Home() {
         if(response) {
           const newResult: FallacyAnalysisResult = { ...response, query, type: 'fallacy-analysis' };
           setResult(newResult);
+          setHistory((prevHistory) => [newResult, ...prevHistory]);
         }
       } catch (error) {
         console.error("Fallacy analysis failed:", error);
@@ -204,6 +206,7 @@ export default function Home() {
        if(response) {
          const newResult: SourceTraceResult = { ...response, query, type: 'source-trace' };
          setResult(newResult);
+         setHistory((prevHistory) => [newResult, ...prevHistory]);
        }
      } catch (error) {
        console.error("Source trace failed:", error);
@@ -232,6 +235,7 @@ export default function Home() {
      if(response) {
        const newResult: ScamAnalysisResult = { ...response, query, type: 'scam-analysis' };
        setResult(newResult);
+       setHistory((prevHistory) => [newResult, ...prevHistory]);
      }
    } catch (error) {
      console.error("Scam check failed:", error);
@@ -258,10 +262,10 @@ export default function Home() {
     }
   };
 
-  const handleSelectHistory = (selectedResult: FactCheckResult) => {
+  const handleSelectHistory = (selectedResult: Result) => {
     setResult(selectedResult);
     setText(selectedResult.query);
-    setInputMode("text");
+    setInputMode(selectedResult.type === 'fact-check' ? 'text' : selectedResult.type);
   };
 
   const handleClearHistory = () => {
@@ -284,10 +288,21 @@ export default function Home() {
       description: message,
     })
   }
-  
-  const getVerdictColor = (verdict?: 'TRUE' | 'FAKE') => {
-    if (!verdict) return 'bg-muted';
-    return verdict === 'TRUE' ? 'bg-green-500' : 'bg-red-500';
+
+  const getHistoryItemIcon = (item: Result) => {
+    switch (item.type) {
+      case 'fact-check':
+        const isTrue = item.verdict === 'TRUE';
+        return <div className={cn("mt-1 size-2.5 rounded-full shrink-0", isTrue ? 'bg-green-500' : 'bg-red-500')} />;
+      case 'fallacy-analysis':
+        return <BrainCircuit className="size-3.5 shrink-0 text-sidebar-foreground/70" />;
+      case 'source-trace':
+        return <Share2 className="size-3.5 shrink-0 text-sidebar-foreground/70" />;
+      case 'scam-analysis':
+        return <ShieldQuestion className="size-3.5 shrink-0 text-sidebar-foreground/70" />;
+      default:
+        return null;
+    }
   }
 
   const renderResult = () => {
@@ -364,7 +379,7 @@ export default function Home() {
                 <SidebarMenuItem key={index}>
                   <SidebarMenuButton onClick={() => handleSelectHistory(item)} className="h-auto py-2">
                      <div className="flex items-start gap-3">
-                        <span className={cn("mt-1.5 size-2 rounded-full shrink-0", getVerdictColor(item.verdict))}/>
+                        {getHistoryItemIcon(item)}
                         <span className="text-wrap text-left">{item.query}</span>
                       </div>
                   </SidebarMenuButton>
