@@ -290,6 +290,15 @@ export default function Home() {
     })
   }
 
+  const handleTranscription = (transcribedText: string) => {
+    setText(transcribedText);
+    setInputMode('text');
+    toast({
+      title: "Transcription Complete",
+      description: "Your speech has been transcribed. You can now submit it for analysis.",
+    });
+  };
+
   const getHistoryItemIcon = (item: Result) => {
     switch (item.type) {
       case 'fact-check':
@@ -552,7 +561,7 @@ export default function Home() {
 
                 {inputMode === 'voice' && (
                   <VoiceInput
-                    onFactCheck={handleFactCheck}
+                    onTranscription={handleTranscription}
                     onTranscribe={speechToText}
                     isPending={isPending}
                   />

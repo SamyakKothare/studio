@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -5,14 +6,15 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Mic, Square, Waves } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { speechToText } from '@/ai/flows/speech-to-text';
+import type { SpeechToTextOutput, SpeechToTextInput } from '@/ai/flows/speech-to-text';
 
 interface VoiceInputProps {
-  onFactCheck: (query: string) => void;
+  onTranscription: (transcribedText: string) => void;
+  onTranscribe: (input: SpeechToTextInput) => Promise<SpeechToTextOutput>;
   isPending: boolean;
 }
 
-export function VoiceInput({ onFactCheck, isPending }: VoiceInputProps) {
+export function VoiceInput({ onTranscription, onTranscribe, isPending }: VoiceInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -68,9 +70,9 @@ export function VoiceInput({ onFactCheck, isPending }: VoiceInputProps) {
                 description: 'Transcribing your speech...',
             });
             try {
-                const {transcription} = await speechToText({audioDataUri: base64Audio});
+                const {transcription} = await onTranscribe({audioDataUri: base64Audio});
                 if (transcription) {
-                    onFactCheck(transcription);
+                    onTranscription(transcription);
                 } else {
                     toast({
                         title: 'Transcription Failed',
