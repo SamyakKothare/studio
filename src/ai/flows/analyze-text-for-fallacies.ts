@@ -43,7 +43,7 @@ Text to Analyze:
     *   **fallacy**: The name of the logical fallacy.
     *   **explanation**: A brief, clear explanation of why the specific excerpt constitutes that fallacy.
     *   **excerpt**: The exact quote from the text where the fallacy is present.
-4.  If no fallacies are found, return an empty array for the "fallacies" field.
+4.  If no fallacies are found, you MUST return an empty array for the "fallacies" field. Do not fail the request.
 
 Output the results in a single JSON object.`,
 });
