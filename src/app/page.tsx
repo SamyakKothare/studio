@@ -68,7 +68,7 @@ import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinform
 import { SourceGraphCard } from "@/components/source-graph-card";
 import type { AnalyzeTextForScamOutput } from "@/ai/flows/analyze-text-for-scam";
 import { ScamAnalysisCard } from "@/components/scam-analysis-card";
-import { speechToText, type SpeechToTextInput } from "@/ai/flows/speech-to-text";
+import { speechToText } from "@/ai/flows/speech-to-text";
 
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
@@ -482,8 +482,8 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'text'))}
-                      variant="ghost"
+                      className={cn("transition-all duration-300")}
+                      variant={inputMode === 'text' ? 'gradient' : 'ghost'}
                       onClick={() => setInputMode('text')}
                     >
                       <MessageSquare/>Fact-Check
@@ -491,8 +491,8 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'image'))}
-                      variant="ghost"
+                      className={cn("transition-all duration-300")}
+                      variant={inputMode === 'image' ? 'gradient' : 'ghost'}
                       onClick={() => setInputMode('image')}
                     >
                       <ImageIcon/>Image
@@ -500,8 +500,8 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'voice'))}
-                      variant="ghost"
+                      className={cn("transition-all duration-300")}
+                      variant={inputMode === 'voice' ? 'gradient' : 'ghost'}
                       onClick={() => setInputMode('voice')}
                     >
                       <Mic/>Voice
@@ -509,8 +509,8 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'analyze'))}
-                      variant="ghost"
+                      className={cn("transition-all duration-300")}
+                      variant={inputMode === 'analyze' ? 'gradient' : 'ghost'}
                       onClick={() => setInputMode('analyze')}
                     >
                       <BrainCircuit/>Analyze
@@ -518,8 +518,8 @@ export default function Home() {
                      <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'trace'))}
-                      variant="ghost"
+                      className={cn("transition-all duration-300")}
+                      variant={inputMode === 'trace' ? 'gradient' : 'ghost'}
                       onClick={() => setInputMode('trace')}
                     >
                       <Share2/>Trace Source
@@ -527,8 +527,8 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'scam'))}
-                      variant="ghost"
+                      className={cn("transition-all duration-300")}
+                      variant={inputMode === 'scam' ? 'gradient' : 'ghost'}
                       onClick={() => setInputMode('scam')}
                     >
                       <ShieldQuestion/>Scam Detector

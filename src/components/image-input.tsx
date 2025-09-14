@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -8,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Image as ImageIcon, Sparkles, X } from 'lucide-react';
 import Image from 'next/image';
 import type { FactCheckImageAndTextInput } from '@/ai/flows/fact-check-image-and-text';
+import { cn } from '@/lib/utils';
 
 interface ImageInputProps {
   onFactCheck: (input: FactCheckImageAndTextInput) => void;
@@ -18,25 +20,30 @@ export function ImageInput({ onFactCheck, isPending }: ImageInputProps) {
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
+
+  const processFile = (file: File) => {
+    if (file.size > 4 * 1024 * 1024) { // 4MB limit
+      toast({
+        title: 'Image size too large',
+        description: 'Please select an image smaller than 4MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 4 * 1024 * 1024) { // 4MB limit
-        toast({
-          title: 'Image size too large',
-          description: 'Please select an image smaller than 4MB.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      processFile(file);
     }
   };
 
@@ -67,10 +74,46 @@ export function ImageInput({ onFactCheck, isPending }: ImageInputProps) {
     onFactCheck({ query: description, photoDataUri: imagePreview });
   };
 
+  const handleDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 animate-in fade-in-50">
       {!imagePreview ? (
-        <label className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
+        <label 
+          className={cn(
+            "relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80 transition-colors",
+            isDragging && "bg-primary/10 border-primary"
+          )}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <ImageIcon className="w-10 h-10 mb-3 text-gray-400" />
             <p className="mb-2 text-sm text-muted-foreground">
@@ -102,7 +145,7 @@ export function ImageInput({ onFactCheck, isPending }: ImageInputProps) {
           disabled={isPending}
         />
 
-      <Button type="submit" className="self-start" disabled={isPending || !imageFile}>
+      <Button type="submit" size="lg" variant="gradient" className="self-start font-bold text-base" disabled={isPending || !imageFile}>
         <Sparkles className="mr-2" />
         {isPending ? 'Analyzing...' : 'Fact Check Image'}
       </Button>
