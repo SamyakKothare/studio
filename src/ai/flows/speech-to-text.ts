@@ -32,8 +32,8 @@ export async function speechToText(input: SpeechToTextInput): Promise<SpeechToTe
 const prompt = ai.definePrompt({
     name: 'speechToTextPrompt',
     input: { schema: SpeechToTextInputSchema },
-    output: { schema: SpeechToTextOutputSchema },
-    prompt: `Transcribe the following audio recording.
+    output: { schema: z.object({ transcription: z.string() }) }, // Output is an object
+    prompt: `Transcribe the following audio recording and provide the text in the 'transcription' field.
 
 Audio: {{media url=audioDataUri}}`,
 });
@@ -46,10 +46,17 @@ const speechToTextFlow = ai.defineFlow(
     outputSchema: SpeechToTextOutputSchema,
   },
   async (input) => {
-    const llmResponse = await prompt(input);
-    const output = llmResponse.output;
-    if (!output) {
-        throw new Error("No output from prompt");
+    const { output } = await prompt(input);
+    if (!output?.transcription) {
+        // Look for the text in the message parts if structured output fails
+        const llmResponse = await ai.generate({
+            prompt: `Transcribe the following audio recording: {{media url=${input.audioDataUri}}}`,
+        });
+        const transcription = llmResponse.text;
+        if (transcription) {
+            return { transcription };
+        }
+        throw new Error("No transcription could be generated from the audio.");
     }
     return {
         transcription: output.transcription,

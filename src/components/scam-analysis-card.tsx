@@ -36,19 +36,19 @@ const riskLevelConfig = {
         icon: <ShieldAlert className="size-8 text-destructive" />,
         badgeClass: "bg-destructive/10 text-destructive border-destructive/20",
         titleClass: "text-destructive",
-        borderColor: "border-destructive/50",
+        borderColor: "border-destructive",
     },
     'Medium Risk': {
         icon: <ShieldQuestion className="size-8 text-amber-500" />,
         badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
         titleClass: "text-amber-600",
-        borderColor: "border-amber-500/50",
+        borderColor: "border-amber-500",
     },
     'Likely Safe': {
         icon: <ShieldCheck className="size-8 text-green-500" />,
         badgeClass: "bg-green-500/10 text-green-600 border-green-500/20",
         titleClass: "text-green-600",
-        borderColor: "border-green-500/50",
+        borderColor: "border-green-500",
     }
 }
 
@@ -65,7 +65,7 @@ export function ScamAnalysisCard({ result, isLoading = false }: ScamAnalysisCard
   const config = riskLevelConfig[riskLevel];
 
   return (
-    <Card className={cn("shadow-lg animate-in fade-in-50 border-t-4", config.borderColor)} style={{borderTopColor: riskLevelConfig[riskLevel] ? `hsl(var(--${riskLevel === 'High Risk' ? 'destructive' : riskLevel === 'Medium Risk' ? 'chart-4' : 'accent'}))` : 'hsl(var(--border))'}}>
+    <Card className={cn("shadow-lg animate-in fade-in-50 border-t-4", config.borderColor)}>
       <CardHeader>
         <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">

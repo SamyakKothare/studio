@@ -53,7 +53,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { GenerateFactCheckVerdictOutput } from "@/ai/flows/generate-fact-check-verdict";
-import { checkFact, checkImageFact, analyzeFallacies, traceSource, checkForScam } from "./actions";
+import { checkFact, checkImageFact, analyzeFallacies, traceSource, checkForScam, getSimplifiedExplanation } from "./actions";
 import { Logo } from "@/components/logo";
 import { VerdictCard } from "@/components/verdict-card";
 import { Welcome } from "@/components/welcome";
@@ -68,6 +68,7 @@ import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinform
 import { SourceGraphCard } from "@/components/source-graph-card";
 import type { AnalyzeTextForScamOutput } from "@/ai/flows/analyze-text-for-scam";
 import { ScamAnalysisCard } from "@/components/scam-analysis-card";
+import { speechToText } from "@/ai/flows/speech-to-text";
 
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
@@ -265,7 +266,7 @@ export default function Home() {
   const handleSelectHistory = (selectedResult: Result) => {
     setResult(selectedResult);
     setText(selectedResult.query);
-    setInputMode(selectedResult.type === 'fact-check' ? 'text' : selectedResult.type);
+    setInputMode(selectedResult.type === 'fact-check' ? 'text' : selectedResult.type === 'fallacy-analysis' ? 'analyze' : selectedResult.type === 'source-trace' ? 'trace' : 'scam');
   };
 
   const handleClearHistory = () => {
@@ -323,7 +324,7 @@ export default function Home() {
     }
 
     if (result.type === 'fact-check') {
-      return <VerdictCard result={result} />
+      return <VerdictCard result={result} onSimplify={getSimplifiedExplanation} />
     }
     if (result.type === 'fallacy-analysis') {
       return <FallacyAnalysisCard result={result} />
@@ -429,7 +430,7 @@ export default function Home() {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2 font-bold">
+              <Button variant="gradient" className="flex items-center gap-2 font-bold">
                 <RotateCw className="size-4" />
                 <span>New Session</span>
                 <ChevronDown className="size-4" />
@@ -451,11 +452,13 @@ export default function Home() {
 
         <main className="flex-1 overflow-auto p-4 md:p-6 bg-secondary/30">
           <div className="mx-auto max-w-4xl space-y-8">
-            <Card className="shadow-lg border-primary/20">
+             <Card className="shadow-lg bg-gradient-to-br from-background via-card to-background border-primary/10">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="text-primary"/>
-                  Submit a Claim for Verification
+                <CardTitle className="flex items-center gap-3">
+                   <div className="p-2.5 bg-primary/10 rounded-full border-4 border-primary/20">
+                     <Sparkles className="text-primary size-6"/>
+                   </div>
+                  <span className="text-2xl">Submit a Claim for Verification</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -463,7 +466,7 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'text' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      className={cn("transition-all duration-300", inputMode === 'text' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
                       variant="ghost"
                       onClick={() => setInputMode('text')}
                     >
@@ -472,7 +475,7 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'image' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      className={cn("transition-all duration-300", inputMode === 'image' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
                       variant="ghost"
                       onClick={() => setInputMode('image')}
                     >
@@ -481,7 +484,7 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'voice' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      className={cn("transition-all duration-300", inputMode === 'voice' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
                       variant="ghost"
                       onClick={() => setInputMode('voice')}
                     >
@@ -490,7 +493,7 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'analyze' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      className={cn("transition-all duration-300", inputMode === 'analyze' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
                       variant="ghost"
                       onClick={() => setInputMode('analyze')}
                     >
@@ -499,7 +502,7 @@ export default function Home() {
                      <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'trace' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      className={cn("transition-all duration-300", inputMode === 'trace' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
                       variant="ghost"
                       onClick={() => setInputMode('trace')}
                     >
@@ -508,7 +511,7 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn(inputMode === 'scam' && "bg-background shadow text-foreground hover:bg-background/90")}
+                      className={cn("transition-all duration-300", inputMode === 'scam' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
                       variant="ghost"
                       onClick={() => setInputMode('scam')}
                     >
@@ -525,7 +528,7 @@ export default function Home() {
                       className="min-h-[120px] text-base"
                       disabled={isPending}
                     />
-                     <Button type="submit" size="lg" className="self-start" disabled={isPending || !text.trim()}>
+                     <Button type="submit" size="lg" variant="gradient" className="self-start font-bold text-base" disabled={isPending || !text.trim()}>
                       {inputMode === 'text' && <Sparkles className="mr-2" />}
                       {inputMode === 'analyze' && <BrainCircuit className="mr-2" />}
                       {inputMode === 'trace' && <Share2 className="mr-2" />}
@@ -550,6 +553,7 @@ export default function Home() {
                 {inputMode === 'voice' && (
                   <VoiceInput
                     onFactCheck={handleFactCheck}
+                    onTranscribe={speechToText}
                     isPending={isPending}
                   />
                 )}
