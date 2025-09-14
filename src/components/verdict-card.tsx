@@ -108,23 +108,32 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
         displayUrl: source.url,
       };
     }
+    
+    // Safeguard: Check if it's a valid-looking URL, otherwise treat as search.
+    if (source.url.startsWith('http://') || source.url.startsWith('https://')) {
+        try {
+            new URL(source.url); // Validate URL structure
+            return {
+                href: source.url,
+                icon: <LinkIcon className="h-4 w-4 shrink-0" />,
+                displayUrl: source.url,
+            };
+        } catch (e) {
+            // Fallback for malformed URLs that start with http
+            return {
+                href: `https://www.google.com/search?q=${encodeURIComponent(source.url)}`,
+                icon: <Search className="h-4 w-4 shrink-0" />,
+                displayUrl: `Search: ${source.url}`,
+            };
+        }
+    }
 
-    try {
-      new URL(source.url); // Check if it's a valid URL
-      return {
-        href: source.url,
-        icon: <LinkIcon className="h-4 w-4 shrink-0" />,
-        displayUrl: source.url,
-      };
-    } catch (e) {
-      // If not a valid URL and not a search query, treat as plain text
-      return {
+    // If not a search query and not a valid URL, default to a search.
+    return {
         href: `https://www.google.com/search?q=${encodeURIComponent(source.url)}`,
         icon: <Search className="h-4 w-4 shrink-0" />,
         displayUrl: `Search: ${source.url}`,
-        isInvalidUrl: true,
-      };
-    }
+    };
   };
 
   return (
@@ -315,7 +324,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
             <h3 className="font-semibold text-lg">Sources</h3>
             <div className="space-y-4 w-full">
               {sources.map((source, index) => {
-                const { href, icon, displayUrl, isInvalidUrl } = renderSource(source);
+                const { href, icon, displayUrl } = renderSource(source);
                 return (
                   <div key={index} className="flex flex-col gap-1">
                     <a
@@ -325,7 +334,7 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
                         className="text-sm text-primary/90 flex items-center gap-2 hover:text-primary hover:underline"
                     >
                         {icon}
-                        <p className={cn("truncate font-medium", isInvalidUrl && "text-destructive")}>{displayUrl}</p>
+                        <p className="truncate font-medium">{displayUrl}</p>
                         <ExternalLink className="h-4 w-4 shrink-0" />
                     </a>
                     <p className="text-sm text-muted-foreground pl-6">{source.summary}</p>
