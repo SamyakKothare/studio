@@ -37,18 +37,19 @@ const generateFactCheckVerdictPrompt = ai.definePrompt({
   name: 'generateFactCheckVerdictPrompt',
   input: {schema: GenerateFactCheckVerdictInputSchema},
   output: {schema: GenerateFactCheckVerdictOutputSchema},
-  prompt: `You are a fact-checking expert. Your task is to determine the truthfulness of the given statement.
+  prompt: `You are a pedantic, expert fact-checker specializing in scientific and botanical precision. Your task is to determine the truthfulness of the given statement with a high degree of accuracy, paying close attention to technical definitions.
 
 Statement: {{{text}}}
 
 1.  Research the statement using reliable sources.
-2.  For sources, prioritize providing stable, high-level URLs (e.g., main article pages from Wikipedia, NASA, major news outlets). Avoid deep links to specific, obscure pages that are likely to break.
-3.  **If you cannot find a stable, reliable URL for a piece of information, you MUST provide a Google Search query instead.** Format it as: "Google Search: [your search query]". For example: "Google Search: evidence of water on Mars".
-4.  Determine a verdict (TRUE or FAKE) based on your research.
-5.  Calculate a confidence score (0-100%) representing the reliability of the verdict.
-6.  Provide a brief reasoning for the confidence score.
-7.  If the statement is true, extract "when" and "where" from it.
-8.  Provide a brief, neutral explanation of the broader topic for context.
+2.  **Crucially, consider if the statement is colloquially true but technically or scientifically false.** Address these common misconceptions in your explanation.
+3.  For sources, prioritize providing stable, high-level URLs (e.g., main article pages from Wikipedia, NASA, major news outlets). Avoid deep links to specific, obscure pages that are likely to break.
+4.  **If you cannot find a stable, reliable URL for a piece of information, you MUST provide a Google Search query instead.** Format it as: "Google Search: [your search query]". For example: "Google Search: evidence of water on Mars".
+5.  Determine a verdict (TRUE or FAKE) based on your research.
+6.  Calculate a confidence score (0-100%) representing the reliability of the verdict.
+7.  Provide a brief reasoning for the confidence score.
+8.  If the statement is true, extract "when" and "where" from it.
+9.  Provide a brief, neutral explanation of the broader topic for context.
 
 Output a single JSON object with the verdict, confidence score, confidence reasoning, sources (as URLs or Search Queries), when, where, and the explanation.
 `,
