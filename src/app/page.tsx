@@ -68,7 +68,7 @@ import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinform
 import { SourceGraphCard } from "@/components/source-graph-card";
 import type { AnalyzeTextForScamOutput } from "@/ai/flows/analyze-text-for-scam";
 import { ScamAnalysisCard } from "@/components/scam-analysis-card";
-import { speechToText } from "@/ai/flows/speech-to-text";
+import { speechToText, type SpeechToTextInput } from "@/ai/flows/speech-to-text";
 
 
 type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOutput) & {
@@ -361,6 +361,13 @@ export default function Home() {
         return "";
     }
   }
+  
+  const getActiveButtonClasses = (isActive: boolean) => {
+    return isActive
+      ? "bg-primary text-primary-foreground shadow hover:bg-primary/90"
+      : "hover:bg-muted-foreground/20";
+  };
+
 
   return (
     <SidebarProvider>
@@ -475,7 +482,7 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", inputMode === 'text' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
+                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'text'))}
                       variant="ghost"
                       onClick={() => setInputMode('text')}
                     >
@@ -484,7 +491,7 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", inputMode === 'image' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
+                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'image'))}
                       variant="ghost"
                       onClick={() => setInputMode('image')}
                     >
@@ -493,7 +500,7 @@ export default function Home() {
                   <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", inputMode === 'voice' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
+                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'voice'))}
                       variant="ghost"
                       onClick={() => setInputMode('voice')}
                     >
@@ -502,7 +509,7 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", inputMode === 'analyze' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
+                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'analyze'))}
                       variant="ghost"
                       onClick={() => setInputMode('analyze')}
                     >
@@ -511,7 +518,7 @@ export default function Home() {
                      <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", inputMode === 'trace' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
+                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'trace'))}
                       variant="ghost"
                       onClick={() => setInputMode('trace')}
                     >
@@ -520,7 +527,7 @@ export default function Home() {
                     <Button
                       type="button"
                       size="sm"
-                      className={cn("transition-all duration-300", inputMode === 'scam' ? "bg-background shadow text-foreground hover:bg-background/90" : "hover:bg-muted-foreground/20")}
+                      className={cn("transition-all duration-300", getActiveButtonClasses(inputMode === 'scam'))}
                       variant="ghost"
                       onClick={() => setInputMode('scam')}
                     >
