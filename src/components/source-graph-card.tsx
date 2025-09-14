@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { TraceMisinformationSourceOutput } from "@/ai/flows/trace-misinformation-source";
 import { Share2, FileText, Newspaper, Megaphone, Globe, Info } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, Customized } from 'recharts';
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip, ZAxis, Legend } from 'recharts';
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,19 +38,26 @@ const simpleHash = (str: string) => {
 export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardProps) {
   const graphData = useMemo(() => {
     if (!result || !result.nodes) return { nodes: [], links: [] };
+    
     const positionedNodes = result.nodes.map((node, index) => ({
       ...node,
-      x: simpleHash(node.id) % 100, 
-      y: Math.floor(index / (Math.sqrt(result.nodes.length) || 1)) * 25 + (simpleHash(node.label) % 25), 
-      size: 150, 
+      x: simpleHash(node.id) % 100,
+      y: Math.floor(index / (Math.sqrt(result.nodes.length) || 1)) * 25 + (simpleHash(node.label) % 25),
+      size: 150,
     }));
-
+    
     const nodeMap = new Map(positionedNodes.map(node => [node.id, node]));
 
-    const graphLinks = result.links.map(link => ({
-      source: nodeMap.get(link.source),
-      target: nodeMap.get(link.target)
-    })).filter(l => l.source && l.target);
+    const graphLinks = result.links
+      .map(link => {
+        const source = nodeMap.get(link.source);
+        const target = nodeMap.get(link.target);
+        if (source && target) {
+          return [source, target];
+        }
+        return null;
+      })
+      .filter((l): l is ({ x: number, y: number })[] => l !== null);
 
     return { nodes: positionedNodes, links: graphLinks };
   }, [result]);
@@ -75,6 +82,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      if (!data.label) return null; // Don't show tooltip for lines
       return (
           <div className="p-3 bg-background border border-border rounded-lg shadow-lg max-w-xs text-sm">
               <p className="font-bold text-base text-foreground mb-2 flex items-center gap-2">
@@ -100,7 +108,7 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
     return null;
   };
 
-  const typeToColor = {
+  const typeToColor: Record<string, string> = {
     origin: 'hsl(var(--destructive))',
     amplifier: 'hsl(var(--chart-4))',
     news_outlet: 'hsl(var(--chart-1))',
@@ -108,43 +116,11 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
   };
 
   const legendItems = [
-    { label: "Origin", color: typeToColor.origin },
-    { label: "Amplifier", color: typeToColor.amplifier },
-    { label: "News Outlet", color: typeToColor.news_outlet },
-    { label: "Social Media", color: typeToColor.social_media },
+    { value: "Origin", type: "circle", color: typeToColor.origin },
+    { value: "Amplifier", type: "circle", color: typeToColor.amplifier },
+    { value: "News Outlet", type: "circle", color: typeToColor.news_outlet },
+    { value: "Social Media", type: "circle", color: typeToColor.social_media },
   ];
-
-  const NodeWithTimestamp = (props: any) => {
-    const { cx, cy, payload } = props;
-    const color = typeToColor[payload.type as keyof typeof typeToColor] || '#8884d8';
-
-    return (
-      <g>
-        <circle cx={cx} cy={cy} r={8} fill={color} />
-        {payload.timestamp && (
-            <text x={cx} y={cy + 18} textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))">
-              {payload.timestamp}
-            </text>
-          )}
-      </g>
-    );
-  };
-  
-  const RenderLines = () => (
-    <g>
-      {graphData.links.map((link, i) => (
-         <line
-             key={`line-${i}`}
-             x1={link.source?.x}
-             y1={link.source?.y}
-             x2={link.target?.x}
-             y2={link.target?.y}
-             stroke="hsl(var(--border))"
-             strokeWidth={1}
-         />
-      ))}
-    </g>
-  );
 
   return (
     <Card className="shadow-lg animate-in fade-in-50 border-t-4 border-primary">
@@ -183,9 +159,31 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                         >
                         <XAxis type="number" dataKey="x" hide domain={[-5, 105]} />
                         <YAxis type="number" dataKey="y" hide domain={[-5, 105]}/>
+                        <ZAxis type="category" dataKey="type" name="type" />
+
                         <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }}/>
-                        <Customized component={RenderLines} />
-                        <Scatter name="Nodes" data={graphData.nodes} shape={<NodeWithTimestamp />} />
+                        <Legend payload={legendItems} />
+
+                        {/* Render nodes for each type */}
+                        {Object.keys(typeToColor).map(type => (
+                           <Scatter
+                              key={type}
+                              name={type}
+                              data={graphData.nodes.filter(n => n.type === type)}
+                              fill={typeToColor[type]}
+                            />
+                        ))}
+                        
+                        {/* Render lines connecting nodes */}
+                        {graphData.links.map((link, i) => (
+                           <Scatter
+                              key={`line-${i}`}
+                              data={link}
+                              line={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+                              shape={() => null} // No visible shape for line data points
+                           />
+                        ))}
+
                     </ScatterChart>
                 </ResponsiveContainer>
             ) : (
@@ -193,21 +191,6 @@ export function SourceGraphCard({ result, isLoading = false }: SourceGraphCardPr
                     No network graph to display.
                 </div>
             )}
-        </div>
-
-        <div>
-            <h3 className="font-semibold text-lg text-primary mb-3">Legend</h3>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-                {legendItems.map((item) => (
-                    <div key={item.label} className="flex items-center gap-2">
-                    <span
-                        className="size-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm text-muted-foreground">{item.label}</span>
-                    </div>
-                ))}
-            </div>
         </div>
 
         <Separator />
