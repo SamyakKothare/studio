@@ -36,6 +36,7 @@ type FactCheckResult = (GenerateFactCheckVerdictOutput | FactCheckImageAndTextOu
 interface VerdictCardProps {
   result?: FactCheckResult;
   isLoading?: boolean;
+  onSimplify?: (textToSimplify: string) => Promise<SimplifyForKidsOutput | null>;
 }
 
 export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
@@ -98,42 +99,33 @@ export function VerdictCard({ result, isLoading = false }: VerdictCardProps) {
     : "";
 
   const renderSource = (source: { url: string; summary: string; }) => {
-    const isSearchQuery = source.url.startsWith("Google Search:");
-    const query = source.url.replace("Google Search:", "").trim();
+    const rawUrl = source.url;
 
-    if (isSearchQuery) {
+    if (rawUrl.startsWith("Google Search:")) {
+      const query = rawUrl.replace("Google Search:", "").trim();
       return {
         href: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
         icon: <Search className="h-4 w-4 shrink-0" />,
-        displayUrl: source.url,
+        displayUrl: rawUrl,
       };
     }
     
-    // Safeguard: Check if it's a valid-looking URL, otherwise treat as search.
-    if (source.url.startsWith('http://') || source.url.startsWith('https://')) {
-        try {
-            new URL(source.url); // Validate URL structure
-            return {
-                href: source.url,
-                icon: <LinkIcon className="h-4 w-4 shrink-0" />,
-                displayUrl: source.url,
-            };
-        } catch (e) {
-            // Fallback for malformed URLs that start with http
-            return {
-                href: `https://www.google.com/search?q=${encodeURIComponent(source.url)}`,
-                icon: <Search className="h-4 w-4 shrink-0" />,
-                displayUrl: `Search: ${source.url}`,
-            };
-        }
+    try {
+        // Try to create a URL object. This will throw an error if the URL is malformed.
+        new URL(rawUrl);
+        return {
+            href: rawUrl,
+            icon: <LinkIcon className="h-4 w-4 shrink-0" />,
+            displayUrl: rawUrl,
+        };
+    } catch (e) {
+        // If the URL is invalid, treat it as a search query.
+        return {
+            href: `https://www.google.com/search?q=${encodeURIComponent(rawUrl)}`,
+            icon: <Search className="h-4 w-4 shrink-0" />,
+            displayUrl: `Search: ${rawUrl}`,
+        };
     }
-
-    // If not a search query and not a valid URL, default to a search.
-    return {
-        href: `https://www.google.com/search?q=${encodeURIComponent(source.url)}`,
-        icon: <Search className="h-4 w-4 shrink-0" />,
-        displayUrl: `Search: ${source.url}`,
-    };
   };
 
   return (

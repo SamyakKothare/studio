@@ -70,7 +70,7 @@ Statement: {{{query}}}
 3.  Provide a confidence score for this manipulation analysis (manipulationConfidence: 0-100%).
 4.  Provide a brief, non-technical reasoning for your analysis.
 
-**IMPORTANT**: If you cannot verify the claim or find any sources, you MUST return a valid JSON object with a 'verdict' of 'FAKE', a 'confidenceScore' of 0, an empty 'sources' array, a 'manipulationAnalysis' object with 'isManipulated' set to false and 'manipulationConfidence' set to 0, and an 'explanation' stating that the claim could not be verified. Do not fail the request.
+**VERY IMPORTANT**: You MUST return a valid JSON object. If you cannot verify the claim or find any sources, you MUST return a 'verdict' of 'FAKE', a 'confidenceScore' of 0, an empty 'sources' array, a 'manipulationAnalysis' object with 'isManipulated' set to false and 'manipulationConfidence' set to 0, and an 'explanation' stating that the claim could not be verified. Do not fail the request. Every source MUST be a valid, high-level URL or be explicitly formatted as a "Google Search: [query]".
 
 Output the combined results of both parts in a single JSON object. Ensure all source URLs are valid or are formatted as Google Search queries.`,
 });

@@ -40,7 +40,15 @@ const prompt = ai.definePrompt({
   name: 'aggregateSourcesPrompt',
   input: {schema: AggregateSourcesInputSchema},
   output: {schema: AggregateSourcesOutputSchema},
-  prompt: `You are an expert fact-checker. Your task is to aggregate information from the given sources to verify the following claim:\n\nClaim: {{{claim}}}\n\nSources:\n{{#each sources}}- {{{this}}}\n{{/each}}\n\nAggregate the information from these sources, providing a summarized and well-formatted output that can be used for fact verification. Focus on identifying key evidence that supports or refutes the claim. The output should be concise and easy to understand.\n`,
+  prompt: `You are an expert fact-checker. Your task is to aggregate information from the given sources to verify the following claim:
+
+Claim: {{{claim}}}
+
+Sources:
+{{#each sources}}- {{{this}}}\n{{/each}}
+
+Aggregate the information from these sources, providing a summarized and well-formatted output that can be used for fact verification. Focus on identifying key evidence that supports or refutes the claim. The output should be concise and easy to understand.
+`,
 });
 
 const aggregateSourcesFlow = ai.defineFlow(

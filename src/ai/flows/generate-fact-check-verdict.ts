@@ -44,16 +44,16 @@ Statement: {{{text}}}
 1.  Research the statement using reliable sources.
 2.  **Crucially, consider if the statement is colloquially true but technically or scientifically false.** Address these common misconceptions in your explanation.
 3.  For sources, prioritize providing stable, high-level URLs (e.g., main article pages from Wikipedia, NASA, major news outlets). Avoid deep links to specific, obscure pages that are likely to break.
-4.  **If you cannot find a stable, reliable URL for a piece of information, you MUST provide a Google Search query instead.** Format it as: "Google Search: [your search query]". For example: "Google Search: evidence of water on Mars".
+4.  If you cannot find a stable, reliable URL for a piece of information, you MUST provide a Google Search query instead. Format it as: "Google Search: [your search query]". For example: "Google Search: evidence of water on Mars".
 5.  Determine a verdict (TRUE or FAKE) based on your research.
 6.  Calculate a confidence score (0-100%) representing the reliability of the verdict.
 7.  Provide a brief reasoning for the confidence score.
 8.  If the statement is true, extract "when" and "where" from it.
 9.  Provide a brief, neutral explanation of the broader topic for context.
 
-**IMPORTANT**: If you cannot verify the claim or find any sources, you MUST return a valid JSON object with a 'verdict' of 'FAKE', a 'confidenceScore' of 0, an empty 'sources' array, and an 'explanation' stating that the claim could not be verified. Do not fail the request.
+**VERY IMPORTANT**: You MUST return a valid JSON object. If you cannot verify the claim or find any sources, you MUST return a 'verdict' of 'FAKE', a 'confidenceScore' of 0, an empty 'sources' array, and an 'explanation' stating that the claim could not be verified. Do not fail the request. Every source MUST be a valid, high-level URL or be explicitly formatted as a "Google Search: [query]".
 
-Output a single JSON object with the verdict, confidence score, confidence reasoning, sources (as URLs or Search Queries), when, where, and the explanation.
+Output a single JSON object with the verdict, confidence score, confidence reasoning, sources, when, where, and the explanation.
 `,
 });
 
