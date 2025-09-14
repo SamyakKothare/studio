@@ -57,7 +57,7 @@ Statement: {{{query}}}
 1.  Analyze the statement in the context of the image.
 2.  Research the statement using reliable sources.
 3.  For sources, prioritize providing stable, high-level URLs (e.g., main article pages from Wikipedia, NASA, major news outlets). Avoid deep links to specific, obscure pages that might break.
-4.  **If you cannot find a stable, reliable URL for a piece of information, you MUST provide a Google Search query instead.** Format it as: "Google Search: [your search query]". For example: "Google Search: evidence of water on Mars".
+4.  If you cannot find a stable, reliable URL for a piece of information, you MUST provide a Google Search query instead. Format it as: "Google Search: [your search query]". For example: "Google Search: evidence of water on Mars".
 5.  Determine a verdict (TRUE or FAKE).
 6.  Calculate a confidence score (0-100%) for your verdict.
 7.  Provide a brief reasoning for the confidence score.
@@ -69,6 +69,8 @@ Statement: {{{query}}}
 2.  Determine if the image appears to be manipulated (isManipulated: true/false).
 3.  Provide a confidence score for this manipulation analysis (manipulationConfidence: 0-100%).
 4.  Provide a brief, non-technical reasoning for your analysis.
+
+**IMPORTANT**: If you cannot verify the claim or find any sources, you MUST return a valid JSON object with a 'verdict' of 'FAKE', a 'confidenceScore' of 0, an empty 'sources' array, a 'manipulationAnalysis' object with 'isManipulated' set to false and 'manipulationConfidence' set to 0, and an 'explanation' stating that the claim could not be verified. Do not fail the request.
 
 Output the combined results of both parts in a single JSON object. Ensure all source URLs are valid or are formatted as Google Search queries.`,
 });
