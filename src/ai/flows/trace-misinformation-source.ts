@@ -61,7 +61,7 @@ Claim: {{{claim}}}
     *   Create 'links' to show the flow of information. For example, if 'Fringe Blog' (source) was cited by 'Major News Outlet' (target), create a link between them.
 4.  **Summarize the Findings**: Write a brief narrative explaining the likely origin of the claim and the path it took to spread.
 
-**IMPORTANT**: If you cannot find any definitive nodes or links for the claim, you MUST return empty arrays for the 'nodes' and 'links' fields. Do not fail the request.
+**IMPORTANT**: If you cannot find any definitive nodes or links for the claim, you MUST return empty arrays for the 'nodes' and 'links' fields and write a summary explaining why. Do not fail the request.
 Provide a comprehensive analysis in the final JSON object. Your response must strictly adhere to the requested JSON schema.`,
 });
 
