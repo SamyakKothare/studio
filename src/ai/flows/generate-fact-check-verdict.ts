@@ -51,6 +51,8 @@ Statement: {{{text}}}
 8.  If the statement is true, extract "when" and "where" from it.
 9.  Provide a brief, neutral explanation of the broader topic for context.
 
+**IMPORTANT**: If you cannot verify the claim or find any sources, you MUST return a valid JSON object with a 'verdict' of 'FAKE', a 'confidenceScore' of 0, an empty 'sources' array, and an 'explanation' stating that the claim could not be verified. Do not fail the request.
+
 Output a single JSON object with the verdict, confidence score, confidence reasoning, sources (as URLs or Search Queries), when, where, and the explanation.
 `,
 });
