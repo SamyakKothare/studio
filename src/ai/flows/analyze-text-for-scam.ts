@@ -57,9 +57,9 @@ Text to Analyze:
 
 3.  **Write a Summary**: Provide a brief, one-sentence summary of your findings and a clear recommendation (e.g., "This appears to be a dangerous phishing attempt and you should delete it immediately.").
 
-4.  **Detail Detected Tactics**: For each red flag you identify, create an object detailing the \`tactic\`, \`explanation\`, and the \`excerpt\` from the text. If no tactics are found, the 'detectedTactics' array should be empty.
+4.  **Detail Detected Tactics**: For each red flag you identify, create an object detailing the \`tactic\`, \`explanation\`, and the \`excerpt\` from the text. **If no tactics are found, the 'detectedTactics' array MUST be empty.**
 
-Output the results in a single, valid JSON object.`,
+Output the results in a single, valid JSON object. Do not fail the request if no tactics are found.`,
 });
 
 const analyzeTextForScamFlow = ai.defineFlow(
