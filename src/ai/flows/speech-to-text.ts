@@ -33,7 +33,7 @@ const prompt = ai.definePrompt({
     name: 'speechToTextPrompt',
     input: { schema: SpeechToTextInputSchema },
     output: { schema: z.object({ transcription: z.string() }) }, // Output is an object
-    prompt: `Transcribe the following audio recording and provide the text in the 'transcription' field.
+    prompt: `Transcribe the following audio recording. If there is no discernible speech, return an empty string for the transcription.
 
 Audio: {{media url=audioDataUri}}`,
 });
@@ -46,20 +46,23 @@ const speechToTextFlow = ai.defineFlow(
     outputSchema: SpeechToTextOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    if (!output?.transcription) {
-        // Look for the text in the message parts if structured output fails
-        const llmResponse = await ai.generate({
-            prompt: `Transcribe the following audio recording: {{media url=${input.audioDataUri}}}`,
-        });
-        const transcription = llmResponse.text;
-        if (transcription) {
-            return { transcription };
-        }
-        throw new Error("No transcription could be generated from the audio.");
+    // First, try to get a structured response.
+    const structuredResponse = await prompt(input);
+    if (structuredResponse.output?.transcription) {
+      return { transcription: structuredResponse.output.transcription };
     }
-    return {
-        transcription: output.transcription,
-    };
+
+    // If structured response fails, try a direct generation call as a fallback.
+    const llmResponse = await ai.generate({
+        prompt: `Transcribe the following audio recording: {{media url=${input.audioDataUri}}}`,
+    });
+    const transcription = llmResponse.text;
+
+    // If the fallback also fails to produce a result, throw a clear error.
+    if (!transcription) {
+        throw new Error("No transcription could be generated from the audio. The audio may be silent or contain no clear speech.");
+    }
+    
+    return { transcription };
   }
 );
