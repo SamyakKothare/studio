@@ -102,3 +102,59 @@ This architecture leverages the strengths of the Next.js App Router by keeping s
     -   `speech-to-text.ts`: Transcribes user-spoken audio.
 -   **/public/**: Contains static assets.
 -   **/src/app/globals.css**: Defines the global styles and Tailwind CSS theme variables for the application.
+
+---
+
+## Example Inputs for Testing
+
+Here is a comprehensive set of inputs to test all major features of the application.
+
+### 1. Fact-Check (Text)
+This tests the AI's ability to handle claims that are colloquially common but technically false.
+
+*   **Tab:** `Fact-Check`
+*   **Input:**
+    > Tomatoes are scientifically classified as vegetables.
+*   **Expected Result:** A verdict of **FAKE**. The explanation should clarify that while tomatoes are used as vegetables in cooking, they are botanically classified as fruits. This tests the "pedantic" instruction in the prompt.
+
+### 2. Fact-Check (Image)
+This tests the multi-modal analysis of a famous doctored image.
+
+*   **Tab:** `Image`
+*   **Action:** Upload an image of a shark swimming on a flooded highway (a well-known hoax). You can find many examples by searching for "hurricane shark on highway."
+*   **Input Query:**
+    > Is this a real photo of a shark on a highway during a hurricane?
+*   **Expected Result:** A verdict of **FAKE**. The `manipulationAnalysis` should state that the image is **digitally manipulated** with high confidence, explaining that the shark was composited into the photo.
+
+### 3. Analyze Fallacies
+This tests the AI's ability to identify multiple logical fallacies in a single block of text.
+
+*   **Tab:** `Analyze`
+*   **Input:**
+    > Councilman Roberts' new proposal for a downtown park is a complete disaster. We can't trust a man who has been divorced twice to make decisions for our city's families. He claims this park is for "community wellness," but he's really just trying to pave over our heritage to build a monument to himself. If we let him build this park, what's next? He'll be tearing down historic buildings for his own vanity projects all over town. We must stop this now before he ruins everything.
+*   **Expected Result:** The AI should identify at least three fallacies: **Ad Hominem**, **Straw Man**, and **Slippery Slope**, providing the relevant excerpt for each.
+
+### 4. Trace Source
+This tests the AI's ability to trace the origin and spread of a viral media hoax.
+
+*   **Tab:** `Trace Source`
+*   **Input:**
+    > The "Momo Challenge" was a widespread viral game that encouraged children to perform dangerous tasks.
+*   **Expected Result:** A network graph and summary explaining that the "challenge" was a hoax. The graph should identify the origin (an artist's sculpture), amplifiers (local news, social media), and eventual debunking by major news outlets.
+
+### 5. Scam Detector
+This tests the AI's ability to recognize multiple red flags in a typical phishing attempt.
+
+*   **Tab:** `Scam Detector`
+*   **Input:**
+    > SUBJ: URGENT: Unusal Login Activity on Your Accout
+    >
+    > Dear Valued Customer,
+    >
+    > We have detected unusal login activity on your accout from an unrecognized device. For your protection, we have temporaraly suspended your access. You must verify your identity imediatly to avoid permanent account termination.
+    >
+    > Please click here to login and confirm your details: http://your-bank-security-update.info/login
+    >
+    > Thank you,
+    > The Security Team
+*   **Expected Result:** A **High Risk** assessment. The analysis should detect multiple tactics, including "Urgent Call to Action," "Grammatical Errors," and a "Suspicious Link."
